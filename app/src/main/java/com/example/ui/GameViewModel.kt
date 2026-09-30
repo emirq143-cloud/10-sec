@@ -42,6 +42,9 @@ data class GamePlaySession(
   val remainingSeconds: Float = 10f,
   val currentScore: Int = 0,
   val currentStreak: Int = 0,
+  val questionsAnswered: Int = 0,
+  val comboStreak: Int = 0,
+  val isTimerPaused: Boolean = false,
   val isFinished: Boolean = false,
   val isVictory: Boolean = false,
   val accuracyPercent: Int = 100,
@@ -221,15 +224,20 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         val current = _activeSession.value ?: break
         if (current.isFinished) break
 
+        if (current.isTimerPaused) {
+          continue
+        }
+
         val nextTime = max(0f, current.remainingSeconds - step)
         if (nextTime <= 0f) {
+          val isWin = current.currentScore > 0 || current.questionsAnswered > 0
           _activeSession.value = current.copy(
             remainingSeconds = 0f,
             isFinished = true,
-            isVictory = false,
-            feedbackText = "Süre doldu!"
+            isVictory = isWin,
+            feedbackText = if (isWin) "${current.questionsAnswered} soru başarıyla çözüldü!" else "Süre doldu!"
           )
-          onGameCompleted(isVictory = false, accuracy = 30)
+          onGameCompleted(isVictory = isWin, accuracy = if (isWin) 85 else 30)
           break
         } else {
           // Warning vibration when <= 3 seconds left
@@ -239,6 +247,59 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
           _activeSession.value = current.copy(remainingSeconds = nextTime)
         }
       }
+    }
+  }
+
+  fun setTimerPaused(paused: Boolean) {
+    _activeSession.update { it?.copy(isTimerPaused = paused) }
+  }
+
+  fun onRoundSuccess(scoreBonus: Int = 100, timeBonus: Float = 2.5f) {
+    val session = _activeSession.value ?: return
+    if (session.isFinished) return
+
+    val multiplier = if (session.isRiskMode) 3 else 1
+    val addedScore = scoreBonus * multiplier
+    val addedXp = 15 * multiplier
+    val maxDuration = if (session.isRiskMode) session.gameType.riskDurationSeconds.toFloat() else session.gameType.defaultDurationSeconds.toFloat()
+    val newRemaining = kotlin.math.min(maxDuration + 5f, session.remainingSeconds + timeBonus)
+
+    _activeSession.value = session.copy(
+      currentScore = session.currentScore + addedScore,
+      xpGained = session.xpGained + addedXp,
+      questionsAnswered = session.questionsAnswered + 1,
+      comboStreak = session.comboStreak + 1,
+      remainingSeconds = newRemaining
+    )
+
+    val profile = userProfile.value
+    SoundHapticManager.playSuccess(profile.soundEnabled)
+    SoundHapticManager.vibrateSuccess(context, profile.vibrationEnabled)
+  }
+
+  fun onRoundMistake(timePenalty: Float = 2.0f, reason: String = "Hatalı cevap!") {
+    val session = _activeSession.value ?: return
+    if (session.isFinished) return
+
+    val profile = userProfile.value
+    SoundHapticManager.playFail(profile.soundEnabled)
+    SoundHapticManager.vibrateFail(context, profile.vibrationEnabled)
+
+    if (session.isRiskMode) {
+      timerJob?.cancel()
+      _activeSession.value = session.copy(
+        isFinished = true,
+        isVictory = false,
+        feedbackText = "Risk Modunda Hata Yaptın: $reason"
+      )
+      onGameCompleted(isVictory = false, accuracy = 20)
+    } else {
+      val newRemaining = max(0.5f, session.remainingSeconds - timePenalty)
+      _activeSession.value = session.copy(
+        remainingSeconds = newRemaining,
+        comboStreak = 0,
+        feedbackText = reason
+      )
     }
   }
 

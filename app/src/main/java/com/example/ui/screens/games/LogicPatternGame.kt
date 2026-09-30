@@ -12,9 +12,17 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -27,9 +35,93 @@ import com.example.ui.components.CircularTimer
 import com.example.ui.components.GameTopBar
 import com.example.ui.theme.BluePrimary
 import com.example.ui.theme.CardWhite
+import com.example.ui.theme.NeonGold
+import com.example.ui.theme.NeonOrange
+import com.example.ui.theme.SkyBlueAccent
 import com.example.ui.theme.TextDark
-import com.example.ui.theme.TextDarkSecondary
+import com.example.ui.theme.TextDarkMuted
 import com.example.ui.theme.TextWhiteTranslucent
+import com.example.ui.theme.VibrantGreen
+import com.example.ui.theme.VibrantRed
+import kotlin.random.Random
+
+data class LogicPattern(
+  val lines: List<Pair<String, String>>,
+  val correctAnswer: Int,
+  val options: List<Int>
+)
+
+val ICON_PACKS = listOf(
+  listOf("🔺", "🟩", "🔵", "⭐"),
+  listOf("💎", "⚡", "🌙", "🪐"),
+  listOf("🍎", "🍊", "🍇", "🍓"),
+  listOf("🚗", "✈️", "🚀", "🛸"),
+  listOf("🦁", "🐯", "🐻", "🐺"),
+  listOf("🎯", "🏆", "🎲", "🎳")
+)
+
+fun generateRandomPattern(round: Int): LogicPattern {
+  val icons = ICON_PACKS[Random.nextInt(ICON_PACKS.size)]
+  val patternType = Random.nextInt(5)
+
+  val numbers: List<Int> = when (patternType) {
+    0 -> {
+      // Linear step: A, A+d, A+2d, A+3d
+      val start = Random.nextInt(2, 12)
+      val step = Random.nextInt(3, 8)
+      listOf(start, start + step, start + 2 * step, start + 3 * step)
+    }
+    1 -> {
+      // Increasing step: A, A+d, A+d+(d+1), A+d+(d+1)+(d+2)
+      val start = Random.nextInt(3, 10)
+      val step = Random.nextInt(2, 5)
+      val n1 = start
+      val n2 = n1 + step
+      val n3 = n2 + step + 1
+      val n4 = n3 + step + 2
+      listOf(n1, n2, n3, n4)
+    }
+    2 -> {
+      // Doubling: A, 2A, 4A, 8A
+      val start = Random.nextInt(2, 6)
+      listOf(start, start * 2, start * 4, start * 8)
+    }
+    3 -> {
+      // Alternating: A, A+s1, A+s1-s2, A+s1-s2+s1
+      val start = Random.nextInt(10, 25)
+      val s1 = Random.nextInt(4, 9)
+      val s2 = Random.nextInt(1, 3)
+      val n1 = start
+      val n2 = n1 + s1
+      val n3 = n2 - s2
+      val n4 = n3 + s1
+      listOf(n1, n2, n3, n4)
+    }
+    else -> {
+      // Subtraction step
+      val start = Random.nextInt(40, 70)
+      val step = Random.nextInt(4, 9)
+      listOf(start, start - step, start - 2 * step, start - 3 * step)
+    }
+  }
+
+  val correct = numbers[3]
+  val wrong1 = correct + if (Random.nextBoolean()) Random.nextInt(1, 4) else -Random.nextInt(1, 4)
+  val wrong2 = correct + if (wrong1 > correct) -Random.nextInt(2, 5) else Random.nextInt(2, 5)
+  val options = listOf(correct, wrong1, wrong2).distinct().let {
+    if (it.size == 3) it.shuffled()
+    else listOf(correct, correct - 2, correct + 3).shuffled()
+  }
+
+  val lines = listOf(
+    Pair(icons[0], "${numbers[0]}"),
+    Pair(icons[1], "${numbers[1]}"),
+    Pair(icons[2], "${numbers[2]}"),
+    Pair(icons[3], "?")
+  )
+
+  return LogicPattern(lines, correct, options)
+}
 
 @Composable
 fun LogicPatternGame(
@@ -38,138 +130,162 @@ fun LogicPatternGame(
   streak: Int,
   isRiskMode: Boolean,
   onBack: () -> Unit,
-  onSuccess: (scoreBonus: Int, accuracy: Int) -> Unit,
-  onFail: (reason: String) -> Unit
+  onRoundSuccess: (scoreBonus: Int, timeBonus: Float) -> Unit = { _, _ -> },
+  onRoundMistake: (timePenalty: Float, reason: String) -> Unit = { _, _ -> },
+  onSuccess: (scoreBonus: Int, accuracy: Int) -> Unit = { _, _ -> },
+  onFail: (reason: String) -> Unit = {}
 ) {
-  // Pattern:
-  // 🔺 -> 5
-  // 🟩 -> 8   (+3)
-  // 🔵 -> 12  (+4)
-  // ⭐ -> ?   (+5 => 17 or options 15, 16, 20 from image with +3, +4, +4 etc.)
-  val correctAnswer = 16
-  val options = listOf(15, 16, 20)
+  var questionNumber by remember { mutableIntStateOf(1) }
+  var currentPattern by remember { mutableStateOf(generateRandomPattern(1)) }
+  var feedbackText by remember { mutableStateOf("") }
+  var feedbackIsSuccess by remember { mutableStateOf(true) }
+
+  fun handleSelect(chosen: Int) {
+    if (chosen == currentPattern.correctAnswer) {
+      feedbackText = "✓ HARİKA! (+120 Puan)"
+      feedbackIsSuccess = true
+      onRoundSuccess(120, 2.5f)
+      questionNumber++
+      currentPattern = generateRandomPattern(questionNumber)
+    } else {
+      feedbackText = "✗ YANLIŞ! Doğru: ${currentPattern.correctAnswer}"
+      feedbackIsSuccess = false
+      onRoundMistake(2.0f, "Hatalı seçim: $chosen, doğru: ${currentPattern.correctAnswer}")
+      if (!isRiskMode) {
+        questionNumber++
+        currentPattern = generateRandomPattern(questionNumber)
+      }
+    }
+  }
 
   Column(
     modifier = Modifier.fillMaxSize(),
     horizontalAlignment = Alignment.CenterHorizontally
   ) {
     GameTopBar(
-      title = "Mantık",
+      title = "Mantık Örüntüsü",
       streak = streak,
       isRiskMode = isRiskMode,
       onBack = onBack
     )
 
-    Text(
-      text = "Hangi sayı gelmeli?",
-      color = TextWhiteTranslucent,
-      fontSize = 13.sp
-    )
+    // Soru Rozeti & Geri Bildirim
+    Row(
+      modifier = Modifier
+        .fillMaxWidth()
+        .padding(horizontal = 30.dp),
+      horizontalArrangement = Arrangement.SpaceBetween,
+      verticalAlignment = Alignment.CenterVertically
+    ) {
+      Box(
+        modifier = Modifier
+          .clip(RoundedCornerShape(12.dp))
+          .background(Color.Black.copy(alpha = 0.5f))
+          .border(1.dp, SkyBlueAccent, RoundedCornerShape(12.dp))
+          .padding(horizontal = 12.dp, vertical = 4.dp)
+      ) {
+        Text(
+          text = "Soru $questionNumber",
+          color = SkyBlueAccent,
+          fontSize = 13.sp,
+          fontWeight = FontWeight.Bold
+        )
+      }
 
-    Spacer(modifier = Modifier.height(20.dp))
+      if (feedbackText.isNotEmpty()) {
+        Text(
+          text = feedbackText,
+          color = if (feedbackIsSuccess) VibrantGreen else VibrantRed,
+          fontSize = 12.sp,
+          fontWeight = FontWeight.Black
+        )
+      }
+    }
 
-    // Crisp White Pattern Card with Vibrant Border
+    Spacer(modifier = Modifier.height(14.dp))
+
+    // Örüntü Kartı
     Box(
       modifier = Modifier
         .fillMaxWidth()
-        .padding(horizontal = 30.dp)
+        .padding(horizontal = 26.dp)
         .shadow(16.dp, RoundedCornerShape(26.dp), spotColor = BluePrimary.copy(alpha = 0.35f))
         .clip(RoundedCornerShape(26.dp))
         .background(CardWhite)
         .border(2.5.dp, BluePrimary, RoundedCornerShape(26.dp))
-        .padding(vertical = 24.dp, horizontal = 28.dp)
+        .padding(vertical = 20.dp, horizontal = 24.dp)
     ) {
       Column(
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.fillMaxWidth()
       ) {
-        PatternLine(icon = "🔺", value = "5")
-        PatternLine(icon = "🟩", value = "8")
-        PatternLine(icon = "🔵", value = "12")
-        PatternLine(icon = "⭐", value = "?", isHighlight = true)
+        currentPattern.lines.forEachIndexed { index, line ->
+          PatternLine(
+            icon = line.first,
+            value = line.second,
+            isHighlight = index == 3
+          )
+        }
       }
-    }
-
-    Spacer(modifier = Modifier.height(24.dp))
-
-    // Clear prominent instruction indicator
-    Box(
-      modifier = Modifier
-        .clip(RoundedCornerShape(16.dp))
-        .background(Color.Black.copy(alpha = 0.55f))
-        .border(1.5.dp, Color(0xFF38BDF8), RoundedCornerShape(16.dp))
-        .padding(horizontal = 16.dp, vertical = 8.dp)
-    ) {
-      Text(
-        text = "👇 DOĞRU SEÇENEĞE DOKUN 👇",
-        color = Color(0xFF38BDF8),
-        fontSize = 13.sp,
-        fontWeight = FontWeight.ExtraBold,
-        letterSpacing = 1.sp
-      )
     }
 
     Spacer(modifier = Modifier.height(16.dp))
 
-    // 3 Highly Distinct, Prominent Choice Cards (A, B, C)
+    Text(
+      text = "👇 DOĞRU SAYIYA DOKUN 👇",
+      color = SkyBlueAccent,
+      fontSize = 12.sp,
+      fontWeight = FontWeight.Black,
+      letterSpacing = 1.sp
+    )
+
+    Spacer(modifier = Modifier.height(14.dp))
+
+    // 3 Seçenek Kartı
     Row(
       modifier = Modifier
         .fillMaxWidth()
         .padding(horizontal = 24.dp),
-      horizontalArrangement = Arrangement.spacedBy(14.dp)
+      horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-      val letters = listOf("A", "B", "C")
-      options.forEachIndexed { idx, option ->
+      val letterBadges = listOf("A", "B", "C")
+      currentPattern.options.forEachIndexed { index, option ->
         Box(
           modifier = Modifier
             .weight(1f)
-            .shadow(10.dp, RoundedCornerShape(20.dp), spotColor = BluePrimary.copy(alpha = 0.4f))
-            .clip(RoundedCornerShape(20.dp))
+            .height(96.dp)
+            .shadow(10.dp, RoundedCornerShape(22.dp), spotColor = SkyBlueAccent.copy(alpha = 0.5f))
+            .clip(RoundedCornerShape(22.dp))
             .background(CardWhite)
-            .border(2.5.dp, BluePrimary, RoundedCornerShape(20.dp))
-            .clickable {
-              if (option == correctAnswer) {
-                onSuccess(100, 100)
-              } else {
-                onFail("Yanlış cevap! Doğru cevap 16 olmalıydı.")
-              }
-            }
-            .padding(vertical = 12.dp),
+            .border(2.5.dp, SkyBlueAccent, RoundedCornerShape(22.dp))
+            .clickable { handleSelect(option) }
+            .padding(8.dp),
           contentAlignment = Alignment.Center
         ) {
           Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(4.dp)
           ) {
-            // Option letter badge (A, B, C)
             Box(
               modifier = Modifier
-                .clip(RoundedCornerShape(6.dp))
-                .background(Color(0xFFEFF6FF))
-                .border(1.dp, BluePrimary.copy(alpha = 0.5f), RoundedCornerShape(6.dp))
-                .padding(horizontal = 8.dp, vertical = 2.dp)
+                .size(24.dp)
+                .clip(CircleShape)
+                .background(BluePrimary),
+              contentAlignment = Alignment.Center
             ) {
               Text(
-                text = letters.getOrElse(idx) { "" },
-                color = BluePrimary,
+                text = letterBadges[index],
+                color = Color.White,
                 fontSize = 12.sp,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Black
               )
             }
-
             Text(
               text = "$option",
               color = TextDark,
               fontSize = 28.sp,
               fontWeight = FontWeight.Black
-            )
-
-            Text(
-              text = "DOKUN ➔",
-              color = Color(0xFF0284C7),
-              fontSize = 11.sp,
-              fontWeight = FontWeight.ExtraBold
             )
           }
         }
@@ -178,17 +294,17 @@ fun LogicPatternGame(
 
     Spacer(modifier = Modifier.weight(1f))
 
-    // Bottom Circular Timer
+    // Alt Süre
     Box(
       modifier = Modifier
         .fillMaxWidth()
-        .padding(bottom = 20.dp),
+        .padding(bottom = 16.dp),
       contentAlignment = Alignment.Center
     ) {
       CircularTimer(
         remainingSeconds = remainingSeconds,
         totalDurationSeconds = durationSeconds,
-        size = 78.dp
+        size = 74.dp
       )
     }
   }
@@ -198,15 +314,15 @@ fun LogicPatternGame(
 private fun PatternLine(icon: String, value: String, isHighlight: Boolean = false) {
   Row(
     verticalAlignment = Alignment.CenterVertically,
-    horizontalArrangement = Arrangement.spacedBy(20.dp)
+    horizontalArrangement = Arrangement.spacedBy(16.dp)
   ) {
     Text(text = icon, fontSize = 28.sp)
-    Text(text = "➔", color = TextDarkSecondary, fontSize = 20.sp)
+    Text(text = "➔", color = TextDarkMuted, fontSize = 18.sp, fontWeight = FontWeight.Bold)
     Text(
       text = value,
-      color = if (isHighlight) BluePrimary else TextDark,
-      fontSize = 28.sp,
-      fontWeight = FontWeight.ExtraBold
+      color = if (isHighlight) NeonOrange else TextDark,
+      fontSize = if (isHighlight) 34.sp else 26.sp,
+      fontWeight = FontWeight.Black
     )
   }
 }

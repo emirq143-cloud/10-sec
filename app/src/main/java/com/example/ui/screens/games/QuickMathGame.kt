@@ -1,5 +1,8 @@
 package com.example.ui.screens.games
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -17,10 +20,6 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Backspace
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -40,15 +39,81 @@ import com.example.ui.components.CircularTimer
 import com.example.ui.components.GameTopBar
 import com.example.ui.theme.BluePrimary
 import com.example.ui.theme.CardWhite
+import com.example.ui.theme.NeonGold
 import com.example.ui.theme.SkyBlueAccent
 import com.example.ui.theme.TextDark
-import com.example.ui.theme.TextWhiteTranslucent
+import com.example.ui.theme.TextDarkMuted
 import com.example.ui.theme.VibrantGreen
+import com.example.ui.theme.VibrantRed
+import kotlin.random.Random
 
 data class MathProblem(
   val prompt: String,
   val answer: Int
 )
+
+fun generateRandomMathProblem(level: Int): MathProblem {
+  return when {
+    level <= 2 -> {
+      // Level 1: Simple Addition or Subtraction
+      if (Random.nextBoolean()) {
+        val a = Random.nextInt(11, 49)
+        val b = Random.nextInt(9, 39)
+        MathProblem("$a + $b = ?", a + b)
+      } else {
+        val a = Random.nextInt(25, 89)
+        val b = Random.nextInt(10, a - 5)
+        MathProblem("$a − $b = ?", a - b)
+      }
+    }
+    level <= 5 -> {
+      // Level 2: Multiplication or Division
+      val op = Random.nextInt(3)
+      when (op) {
+        0 -> {
+          val a = Random.nextInt(6, 12)
+          val b = Random.nextInt(4, 9)
+          MathProblem("$a × $b = ?", a * b)
+        }
+        1 -> {
+          val divisor = Random.nextInt(3, 9)
+          val quotient = Random.nextInt(4, 12)
+          val dividend = divisor * quotient
+          MathProblem("$dividend ÷ $divisor = ?", quotient)
+        }
+        else -> {
+          val a = Random.nextInt(20, 60)
+          val b = Random.nextInt(15, 45)
+          MathProblem("$a + $b = ?", a + b)
+        }
+      }
+    }
+    else -> {
+      // Level 3: Mixed Operations
+      val op = Random.nextInt(3)
+      when (op) {
+        0 -> {
+          val a = Random.nextInt(3, 9)
+          val b = Random.nextInt(3, 8)
+          val c = Random.nextInt(5, 25)
+          MathProblem("$a × $b + $c = ?", (a * b) + c)
+        }
+        1 -> {
+          val a = Random.nextInt(40, 80)
+          val b = Random.nextInt(3, 7)
+          val c = Random.nextInt(3, 6)
+          MathProblem("$a − $b × $c = ?", a - (b * c))
+        }
+        else -> {
+          val a = Random.nextInt(4, 9)
+          val b = Random.nextInt(4, 9)
+          val c = Random.nextInt(10, 30)
+          MathProblem("$a × $b − $c = ?", (a * b) - c)
+        }
+      }
+    }
+  }
+}
 
 @Composable
 fun QuickMathGame(
@@ -57,43 +122,86 @@ fun QuickMathGame(
   streak: Int,
   isRiskMode: Boolean,
   onBack: () -> Unit,
-  onSuccess: (scoreBonus: Int, accuracy: Int) -> Unit,
-  onFail: (reason: String) -> Unit
+  onRoundSuccess: (scoreBonus: Int, timeBonus: Float) -> Unit = { _, _ -> },
+  onRoundMistake: (timePenalty: Float, reason: String) -> Unit = { _, _ -> },
+  onSuccess: (scoreBonus: Int, accuracy: Int) -> Unit = { _, _ -> },
+  onFail: (reason: String) -> Unit = {}
 ) {
-  val problems = remember {
-    listOf(
-      MathProblem("17 × 4 − 9 = ?", 59),
-      MathProblem("24 × 3 − 18 = ?", 54),
-      MathProblem("35 + 8 × 6 = ?", 83),
-      MathProblem("16 × 5 − 27 = ?", 53),
-      MathProblem("48 ÷ 4 + 29 = ?", 41)
-    )
-  }
-
-  var currentProblemIndex by remember { mutableIntStateOf(0) }
+  var questionNumber by remember { mutableIntStateOf(1) }
+  var currentProblem by remember { mutableStateOf(generateRandomMathProblem(1)) }
   var enteredInput by remember { mutableStateOf("") }
-  val problem = problems[currentProblemIndex]
+  var feedbackText by remember { mutableStateOf("") }
+  var feedbackIsSuccess by remember { mutableStateOf(true) }
+
+  fun checkAnswer() {
+    if (enteredInput.isEmpty()) return
+    val userVal = enteredInput.toIntOrNull()
+    if (userVal == currentProblem.answer) {
+      feedbackText = "✓ DOĞRU! (+120 Puan)"
+      feedbackIsSuccess = true
+      onRoundSuccess(120, 2.5f)
+      questionNumber++
+      currentProblem = generateRandomMathProblem(questionNumber)
+      enteredInput = ""
+    } else {
+      feedbackText = "✗ YANLIŞ! Doğru: ${currentProblem.answer}"
+      feedbackIsSuccess = false
+      onRoundMistake(2.0f, "Hatalı cevap: $userVal, beklenen: ${currentProblem.answer}")
+      enteredInput = ""
+      if (!isRiskMode) {
+        questionNumber++
+        currentProblem = generateRandomMathProblem(questionNumber)
+      }
+    }
+  }
 
   Column(
     modifier = Modifier.fillMaxSize(),
     horizontalAlignment = Alignment.CenterHorizontally
   ) {
     GameTopBar(
-      title = "Matematik",
+      title = "Hızlı Matematik",
       streak = streak,
       isRiskMode = isRiskMode,
       onBack = onBack
     )
 
-    Text(
-      text = "5 saniye içinde çöz!",
-      color = TextWhiteTranslucent,
-      fontSize = 13.sp
-    )
+    // Soru ve Combo Rozeti
+    Row(
+      modifier = Modifier
+        .fillMaxWidth()
+        .padding(horizontal = 24.dp),
+      horizontalArrangement = Arrangement.SpaceBetween,
+      verticalAlignment = Alignment.CenterVertically
+    ) {
+      Box(
+        modifier = Modifier
+          .clip(RoundedCornerShape(12.dp))
+          .background(Color.Black.copy(alpha = 0.5f))
+          .border(1.dp, SkyBlueAccent, RoundedCornerShape(12.dp))
+          .padding(horizontal = 12.dp, vertical = 4.dp)
+      ) {
+        Text(
+          text = "Soru $questionNumber",
+          color = SkyBlueAccent,
+          fontSize = 13.sp,
+          fontWeight = FontWeight.Bold
+        )
+      }
 
-    Spacer(modifier = Modifier.height(16.dp))
+      if (feedbackText.isNotEmpty()) {
+        Text(
+          text = feedbackText,
+          color = if (feedbackIsSuccess) VibrantGreen else VibrantRed,
+          fontSize = 12.sp,
+          fontWeight = FontWeight.Black
+        )
+      }
+    }
 
-    // Crisp Question Card with Distinct Glowing Border
+    Spacer(modifier = Modifier.height(12.dp))
+
+    // Soru Kartı
     Box(
       modifier = Modifier
         .fillMaxWidth()
@@ -102,170 +210,133 @@ fun QuickMathGame(
         .clip(RoundedCornerShape(24.dp))
         .background(CardWhite)
         .border(2.5.dp, BluePrimary, RoundedCornerShape(24.dp))
-        .padding(vertical = 20.dp, horizontal = 20.dp),
+        .padding(vertical = 16.dp, horizontal = 20.dp),
       contentAlignment = Alignment.Center
     ) {
       Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
-          text = problem.prompt,
+          text = currentProblem.prompt,
           color = TextDark,
           fontSize = 32.sp,
           fontWeight = FontWeight.ExtraBold
         )
 
         Spacer(modifier = Modifier.height(6.dp))
+
         Box(
           modifier = Modifier
             .clip(RoundedCornerShape(12.dp))
             .background(if (enteredInput.isEmpty()) Color(0xFFF1F5F9) else Color(0xFFEFF6FF))
-            .border(1.5.dp, if (enteredInput.isEmpty()) Color(0xFFCBD5E1) else BluePrimary, RoundedCornerShape(12.dp))
-            .padding(horizontal = 16.dp, vertical = 6.dp)
+            .border(
+              1.5.dp,
+              if (enteredInput.isEmpty()) Color(0xFFCBD5E1) else BluePrimary,
+              RoundedCornerShape(12.dp)
+            )
+            .padding(horizontal = 20.dp, vertical = 6.dp)
         ) {
           Text(
-            text = if (enteredInput.isEmpty()) "Cevap Bekleniyor..." else "Girdiğin: $enteredInput",
-            color = if (enteredInput.isEmpty()) Color(0xFF64748B) else BluePrimary,
-            fontSize = 16.sp,
-            fontWeight = FontWeight.Bold
+            text = if (enteredInput.isEmpty()) "Cevabı Girin..." else enteredInput,
+            color = if (enteredInput.isEmpty()) TextDarkMuted else BluePrimary,
+            fontSize = 20.sp,
+            fontWeight = FontWeight.Black
           )
         }
       }
     }
 
-    Spacer(modifier = Modifier.height(14.dp))
-
-    // Clear instruction tag pointing to keypad
-    Box(
-      modifier = Modifier
-        .clip(RoundedCornerShape(16.dp))
-        .background(Color.Black.copy(alpha = 0.5f))
-        .border(1.dp, SkyBlueAccent.copy(alpha = 0.6f), RoundedCornerShape(16.dp))
-        .padding(horizontal = 14.dp, vertical = 6.dp)
-    ) {
-      Text(
-        text = "👇 CEVABI TUŞLAYIP ONAYLA 👇",
-        color = SkyBlueAccent,
-        fontSize = 12.sp,
-        fontWeight = FontWeight.ExtraBold,
-        letterSpacing = 1.sp
-      )
-    }
-
     Spacer(modifier = Modifier.height(10.dp))
 
-    // Keypad: 1 to 9, Backspace, 0, Check (High-contrast, clearly selectable keys)
+    // Keypad (0-9, Sil, Tamam)
     Box(
       modifier = Modifier
         .weight(1f)
         .fillMaxWidth()
-        .padding(horizontal = 30.dp),
+        .padding(horizontal = 28.dp),
       contentAlignment = Alignment.Center
     ) {
-      val keys = listOf("1", "2", "3", "4", "5", "6", "7", "8", "9", "DEL", "0", "OK")
+      val keypadItems = listOf(
+        "1", "2", "3",
+        "4", "5", "6",
+        "7", "8", "9",
+        "⌫", "0", "OK"
+      )
 
       LazyVerticalGrid(
         columns = GridCells.Fixed(3),
         horizontalArrangement = Arrangement.spacedBy(14.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
-        modifier = Modifier.fillMaxWidth()
+        verticalArrangement = Arrangement.spacedBy(10.dp)
       ) {
-        items(keys.size) { index ->
-          val key = keys[index]
-          val isOk = key == "OK"
-          val isDel = key == "DEL"
+        items(keypadItems.size) { index ->
+          val item = keypadItems[index]
+          val isSpecial = item == "⌫" || item == "OK"
+          val isOk = item == "OK"
 
           Box(
             modifier = Modifier
-              .fillMaxWidth()
-              .height(58.dp)
+              .size(64.dp)
               .shadow(
-                elevation = if (isOk) 10.dp else 6.dp,
-                shape = RoundedCornerShape(18.dp),
+                6.dp,
+                CircleShape,
                 spotColor = if (isOk) VibrantGreen.copy(alpha = 0.5f) else Color(0x33000000)
               )
-              .clip(RoundedCornerShape(18.dp))
+              .clip(CircleShape)
               .background(
                 when {
                   isOk -> VibrantGreen
-                  isDel -> Color(0xFFFEE2E2)
+                  item == "⌫" -> Color(0xFFEF4444)
                   else -> CardWhite
                 }
               )
               .border(
                 width = 2.dp,
                 color = when {
-                  isOk -> Color(0xFF34D399)
-                  isDel -> Color(0xFFEF4444)
-                  else -> Color(0xFF38BDF8)
+                  isOk -> Color.White
+                  item == "⌫" -> Color.White
+                  else -> SkyBlueAccent
                 },
-                shape = RoundedCornerShape(18.dp)
+                shape = CircleShape
               )
               .clickable {
-                when (key) {
-                  "DEL" -> {
-                    if (enteredInput.isNotEmpty()) enteredInput = enteredInput.dropLast(1)
-                  }
-                  "OK" -> {
-                    val parsed = enteredInput.toIntOrNull()
-                    if (parsed == problem.answer) {
-                      onSuccess(100, 100)
-                    } else {
-                      onFail("Yanlış cevap! Doğru cevap: ${problem.answer}")
+                when (item) {
+                  "⌫" -> {
+                    if (enteredInput.isNotEmpty()) {
+                      enteredInput = enteredInput.dropLast(1)
                     }
                   }
+                  "OK" -> {
+                    checkAnswer()
+                  }
                   else -> {
-                    if (enteredInput.length < 4) {
-                      enteredInput += key
-                      // Instant auto-check if user typed exact answer
-                      if (enteredInput.toIntOrNull() == problem.answer) {
-                        onSuccess(100, 100)
-                      }
+                    if (enteredInput.length < 5) {
+                      enteredInput += item
                     }
                   }
                 }
               },
             contentAlignment = Alignment.Center
           ) {
-            when (key) {
-              "DEL" -> Icon(
-                imageVector = Icons.Default.Backspace,
-                contentDescription = "Sil",
-                tint = Color(0xFFDC2626),
-                modifier = Modifier.size(24.dp)
-              )
-              "OK" -> Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
-              ) {
-                Icon(
-                  imageVector = Icons.Default.Check,
-                  contentDescription = "Onayla",
-                  tint = Color.White,
-                  modifier = Modifier.size(26.dp)
-                )
-              }
-              else -> Text(
-                text = key,
-                color = TextDark,
-                fontSize = 24.sp,
-                fontWeight = FontWeight.ExtraBold
-              )
-            }
+            Text(
+              text = item,
+              color = if (isSpecial) Color.White else TextDark,
+              fontSize = if (isSpecial) 18.sp else 24.sp,
+              fontWeight = FontWeight.Black
+            )
           }
         }
       }
     }
 
-    // Circular Timer at the bottom over mountain backdrop
+    // Alt Süre Göstergesi
     Box(
       modifier = Modifier
         .fillMaxWidth()
-        .padding(bottom = 20.dp),
+        .padding(bottom = 16.dp),
       contentAlignment = Alignment.Center
     ) {
       CircularTimer(
         remainingSeconds = remainingSeconds,
         totalDurationSeconds = durationSeconds,
-        size = 78.dp
+        size = 74.dp
       )
     }
   }

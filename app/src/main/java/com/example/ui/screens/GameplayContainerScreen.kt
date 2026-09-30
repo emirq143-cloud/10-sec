@@ -27,8 +27,11 @@ import com.example.ui.screens.games.WorkingMemoryGame
 fun GameplayContainerScreen(
   session: GamePlaySession,
   onBack: () -> Unit,
-  onSuccess: (scoreBonus: Int, accuracy: Int) -> Unit,
-  onFail: (reason: String) -> Unit,
+  onRoundSuccess: (scoreBonus: Int, timeBonus: Float) -> Unit = { _, _ -> },
+  onRoundMistake: (timePenalty: Float, reason: String) -> Unit = { _, _ -> },
+  onSetTimerPaused: (Boolean) -> Unit = {},
+  onSuccess: (scoreBonus: Int, accuracy: Int) -> Unit = { _, _ -> },
+  onFail: (reason: String) -> Unit = {},
   modifier: Modifier = Modifier
 ) {
   BackHandler(onBack = onBack)
@@ -64,6 +67,8 @@ fun GameplayContainerScreen(
         streak = session.currentStreak,
         isRiskMode = session.isRiskMode,
         onBack = onBack,
+        onRoundSuccess = onRoundSuccess,
+        onRoundMistake = onRoundMistake,
         onSuccess = onSuccess,
         onFail = onFail
       )
@@ -73,6 +78,8 @@ fun GameplayContainerScreen(
         streak = session.currentStreak,
         isRiskMode = session.isRiskMode,
         onBack = onBack,
+        onRoundSuccess = onRoundSuccess,
+        onRoundMistake = onRoundMistake,
         onSuccess = onSuccess,
         onFail = onFail
       )
@@ -82,6 +89,9 @@ fun GameplayContainerScreen(
         streak = session.currentStreak,
         isRiskMode = session.isRiskMode,
         onBack = onBack,
+        onSetTimerPaused = onSetTimerPaused,
+        onRoundSuccess = onRoundSuccess,
+        onRoundMistake = onRoundMistake,
         onSuccess = onSuccess,
         onFail = onFail
       )
@@ -91,6 +101,8 @@ fun GameplayContainerScreen(
         streak = session.currentStreak,
         isRiskMode = session.isRiskMode,
         onBack = onBack,
+        onRoundSuccess = onRoundSuccess,
+        onRoundMistake = onRoundMistake,
         onSuccess = onSuccess,
         onFail = onFail
       )
@@ -100,6 +112,8 @@ fun GameplayContainerScreen(
         streak = session.currentStreak,
         isRiskMode = session.isRiskMode,
         onBack = onBack,
+        onRoundSuccess = onRoundSuccess,
+        onRoundMistake = onRoundMistake,
         onSuccess = onSuccess,
         onFail = onFail
       )
@@ -109,6 +123,8 @@ fun GameplayContainerScreen(
         streak = session.currentStreak,
         isRiskMode = session.isRiskMode,
         onBack = onBack,
+        onRoundSuccess = onRoundSuccess,
+        onRoundMistake = onRoundMistake,
         onSuccess = onSuccess,
         onFail = onFail
       )
@@ -118,6 +134,8 @@ fun GameplayContainerScreen(
         streak = session.currentStreak,
         isRiskMode = session.isRiskMode,
         onBack = onBack,
+        onRoundSuccess = onRoundSuccess,
+        onRoundMistake = onRoundMistake,
         onSuccess = onSuccess,
         onFail = onFail
       )
@@ -127,6 +145,9 @@ fun GameplayContainerScreen(
         streak = session.currentStreak,
         isRiskMode = session.isRiskMode,
         onBack = onBack,
+        onSetTimerPaused = onSetTimerPaused,
+        onRoundSuccess = onRoundSuccess,
+        onRoundMistake = onRoundMistake,
         onSuccess = onSuccess,
         onFail = onFail
       )

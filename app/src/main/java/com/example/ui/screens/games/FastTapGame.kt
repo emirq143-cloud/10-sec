@@ -1,5 +1,7 @@
 package com.example.ui.screens.games
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -23,11 +25,13 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -35,8 +39,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.ui.components.CircularTimer
 import com.example.ui.components.GameTopBar
+import com.example.ui.theme.NeonGold
 import com.example.ui.theme.SkyBlueAccent
-import com.example.ui.theme.TextWhiteTranslucent
 import com.example.ui.theme.VibrantGreen
 import com.example.ui.theme.VibrantRed
 import kotlinx.coroutines.delay
@@ -45,7 +49,7 @@ import kotlin.random.Random
 data class DotItem(
   val id: Int,
   val isGreen: Boolean,
-  val isVisible: Boolean = true
+  val isVisible: Boolean
 )
 
 @Composable
@@ -55,12 +59,13 @@ fun FastTapGame(
   streak: Int,
   isRiskMode: Boolean,
   onBack: () -> Unit,
-  onSuccess: (scoreBonus: Int, accuracy: Int) -> Unit,
-  onFail: (reason: String) -> Unit
+  onRoundSuccess: (scoreBonus: Int, timeBonus: Float) -> Unit = { _, _ -> },
+  onRoundMistake: (timePenalty: Float, reason: String) -> Unit = { _, _ -> },
+  onSuccess: (scoreBonus: Int, accuracy: Int) -> Unit = { _, _ -> },
+  onFail: (reason: String) -> Unit = {}
 ) {
-  val targetHits = if (isRiskMode) 14 else 10
-  var currentHits by remember { mutableIntStateOf(0) }
-  var mistakes by remember { mutableIntStateOf(0) }
+  var totalHits by remember { mutableIntStateOf(0) }
+  var combo by remember { mutableIntStateOf(0) }
 
   val dots = remember {
     mutableStateListOf<DotItem>().apply {
@@ -70,14 +75,32 @@ fun FastTapGame(
     }
   }
 
+  // Periodic random reshuffling of visible dots
   LaunchedEffect(Unit) {
     while (true) {
-      delay(700)
+      delay(650)
       for (i in dots.indices) {
-        val show = Random.nextFloat() > 0.30f
-        val isGreen = Random.nextFloat() > 0.25f
+        val show = Random.nextFloat() > 0.25f
+        val isGreen = Random.nextFloat() > 0.30f
         dots[i] = DotItem(id = i, isGreen = isGreen, isVisible = show)
       }
+    }
+  }
+
+  fun onDotTapped(index: Int) {
+    val dot = dots[index]
+    if (!dot.isVisible) return
+
+    if (dot.isGreen) {
+      totalHits++
+      combo++
+      onRoundSuccess(50, 0.4f)
+      // Instantly respawn in new state
+      dots[index] = DotItem(id = index, isGreen = false, isVisible = false)
+    } else {
+      combo = 0
+      onRoundMistake(2.0f, "Kırmızı noktaya dokundun!")
+      dots[index] = DotItem(id = index, isGreen = false, isVisible = false)
     }
   }
 
@@ -86,146 +109,148 @@ fun FastTapGame(
     horizontalAlignment = Alignment.CenterHorizontally
   ) {
     GameTopBar(
-      title = "Hızlı Dokun",
+      title = "Yıldırım Refleks",
       streak = streak,
       isRiskMode = isRiskMode,
       onBack = onBack
     )
 
-    // Prominent clear instruction rule banner
+    // Skor ve Kombo Sayacı
+    Row(
+      modifier = Modifier
+        .fillMaxWidth()
+        .padding(horizontal = 24.dp),
+      horizontalArrangement = Arrangement.SpaceBetween,
+      verticalAlignment = Alignment.CenterVertically
+    ) {
+      Box(
+        modifier = Modifier
+          .clip(RoundedCornerShape(12.dp))
+          .background(Color.Black.copy(alpha = 0.5f))
+          .border(1.dp, VibrantGreen, RoundedCornerShape(12.dp))
+          .padding(horizontal = 12.dp, vertical = 4.dp)
+      ) {
+        Text(
+          text = "🎯 İsabet: $totalHits",
+          color = VibrantGreen,
+          fontSize = 13.sp,
+          fontWeight = FontWeight.Bold
+        )
+      }
+
+      if (combo > 2) {
+        Box(
+          modifier = Modifier
+            .clip(RoundedCornerShape(12.dp))
+            .background(NeonGold.copy(alpha = 0.2f))
+            .border(1.dp, NeonGold, RoundedCornerShape(12.dp))
+            .padding(horizontal = 10.dp, vertical = 4.dp)
+        ) {
+          Text(
+            text = "🔥 ${combo}X Seri!",
+            color = NeonGold,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Black
+          )
+        }
+      }
+    }
+
+    Spacer(modifier = Modifier.height(12.dp))
+
+    // Kural Banner'ı
     Box(
       modifier = Modifier
         .clip(RoundedCornerShape(16.dp))
-        .background(Color.Black.copy(alpha = 0.55f))
+        .background(Color.Black.copy(alpha = 0.6f))
         .border(1.5.dp, Color(0xFF10B981), RoundedCornerShape(16.dp))
-        .padding(horizontal = 16.dp, vertical = 8.dp)
+        .padding(horizontal = 18.dp, vertical = 6.dp)
     ) {
       Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp)
       ) {
         Text(
-          text = "🟢 YEŞİLE DOKUN!",
+          text = "🟢 YEŞİLE BAS!",
           color = Color(0xFF34D399),
           fontSize = 13.sp,
-          fontWeight = FontWeight.ExtraBold
+          fontWeight = FontWeight.Black
         )
         Text(text = "•", color = Color.White)
         Text(
           text = "🔴 KIRMIZIYA BASMA!",
           color = Color(0xFFF87171),
           fontSize = 13.sp,
-          fontWeight = FontWeight.ExtraBold
+          fontWeight = FontWeight.Black
         )
       }
     }
 
     Spacer(modifier = Modifier.height(16.dp))
 
-    // Grid of glowing green & red dots
+    // Refleks Izgarası (3x4 Grid)
     Box(
       modifier = Modifier
         .weight(1f)
         .fillMaxWidth()
-        .padding(horizontal = 24.dp),
+        .padding(horizontal = 28.dp),
       contentAlignment = Alignment.Center
     ) {
       LazyVerticalGrid(
         columns = GridCells.Fixed(3),
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-        modifier = Modifier.fillMaxWidth()
+        horizontalArrangement = Arrangement.spacedBy(20.dp),
+        verticalArrangement = Arrangement.spacedBy(20.dp)
       ) {
         items(dots.size) { index ->
-          val item = dots[index]
-          Box(
-            modifier = Modifier
-              .size(82.dp)
-              .clip(CircleShape)
-              .background(
-                if (!item.isVisible) Color.Transparent
-                else if (item.isGreen) VibrantGreen
-                else VibrantRed
-              )
-              .border(
-                width = if (item.isVisible) 3.5.dp else 0.dp,
-                color = if (!item.isVisible) Color.Transparent else Color.White,
-                shape = CircleShape
-              )
-              .shadow(
-                elevation = if (item.isVisible) 14.dp else 0.dp,
-                shape = CircleShape,
-                spotColor = if (item.isGreen) VibrantGreen.copy(alpha = 0.8f) else VibrantRed.copy(alpha = 0.8f)
-              )
-              .clickable(enabled = item.isVisible) {
-                if (item.isGreen) {
-                  currentHits++
-                  dots[index] = item.copy(isVisible = false)
-                  if (currentHits >= targetHits) {
-                    val accuracy = if (mistakes == 0) 100 else 85
-                    onSuccess(currentHits * 20, accuracy)
-                  }
-                } else {
-                  mistakes++
-                  dots[index] = item.copy(isVisible = false)
-                  if (isRiskMode) {
-                    onFail("Kırmızıya bastın! Risk modunda tek hata eler!")
-                  }
-                }
-              },
-            contentAlignment = Alignment.Center
-          ) {
-            if (item.isVisible) {
-              if (item.isGreen) {
-                Column(
-                  horizontalAlignment = Alignment.CenterHorizontally,
-                  verticalArrangement = Arrangement.Center
-                ) {
-                  Text(
-                    text = "DOKUN",
-                    color = Color.White,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Black
-                  )
-                  Text(text = "✓", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                }
-              } else {
-                Text(
-                  text = "✕",
-                  color = Color.White,
-                  fontSize = 28.sp,
-                  fontWeight = FontWeight.Black
+          val dot = dots[index]
+
+          if (dot.isVisible) {
+            Box(
+              modifier = Modifier
+                .size(76.dp)
+                .shadow(
+                  12.dp,
+                  CircleShape,
+                  spotColor = if (dot.isGreen) VibrantGreen else VibrantRed
                 )
-              }
+                .clip(CircleShape)
+                .background(if (dot.isGreen) VibrantGreen else VibrantRed)
+                .border(3.dp, Color.White, CircleShape)
+                .clickable { onDotTapped(index) },
+              contentAlignment = Alignment.Center
+            ) {
+              Text(
+                text = if (dot.isGreen) "DOKUN" else "BASMA",
+                color = Color.White,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Black
+              )
             }
+          } else {
+            Box(
+              modifier = Modifier
+                .size(76.dp)
+                .clip(CircleShape)
+                .background(Color.White.copy(alpha = 0.08f))
+                .border(1.dp, Color.White.copy(alpha = 0.15f), CircleShape)
+            )
           }
         }
       }
     }
 
-    // Bottom Stats & Circular Timer (Matching column 3 in mockup)
-    Row(
+    // Alt Süre
+    Box(
       modifier = Modifier
         .fillMaxWidth()
-        .padding(horizontal = 36.dp, vertical = 20.dp),
-      verticalAlignment = Alignment.CenterVertically,
-      horizontalArrangement = Arrangement.SpaceBetween
+        .padding(bottom = 16.dp),
+      contentAlignment = Alignment.Center
     ) {
       CircularTimer(
         remainingSeconds = remainingSeconds,
         totalDurationSeconds = durationSeconds,
-        size = 78.dp
+        size = 74.dp
       )
-
-      Column(horizontalAlignment = Alignment.End) {
-        Text(text = "Hedef", color = TextWhiteTranslucent, fontSize = 12.sp)
-        Text(
-          text = "$currentHits / $targetHits",
-          color = Color.White,
-          fontSize = 28.sp,
-          fontWeight = FontWeight.ExtraBold
-        )
-      }
     }
   }
 }

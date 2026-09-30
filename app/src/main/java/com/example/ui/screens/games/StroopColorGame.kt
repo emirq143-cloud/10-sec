@@ -13,14 +13,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -35,14 +34,54 @@ import com.example.ui.components.CircularTimer
 import com.example.ui.components.GameTopBar
 import com.example.ui.theme.BluePrimary
 import com.example.ui.theme.CardWhite
+import com.example.ui.theme.NeonGold
+import com.example.ui.theme.NeonOrange
 import com.example.ui.theme.SkyBlueAccent
-import com.example.ui.theme.TextWhiteTranslucent
+import com.example.ui.theme.TextDark
+import com.example.ui.theme.VibrantGreen
+import com.example.ui.theme.VibrantPink
+import com.example.ui.theme.VibrantRed
 import kotlin.random.Random
 
-data class ColorOptionItem(
+data class ColorItem(
   val name: String,
   val color: Color
 )
+
+val COLOR_POOL = listOf(
+  ColorItem("Kırmızı", Color(0xFFEF4444)),
+  ColorItem("Mavi", Color(0xFF3B82F6)),
+  ColorItem("Yeşil", Color(0xFF10B981)),
+  ColorItem("Sarı", Color(0xFFFBBF24)),
+  ColorItem("Mor", Color(0xFFA855F7))
+)
+
+enum class StroopTargetRule {
+  WORD_TEXT,  // Tap the color matching the text word
+  INK_COLOR   // Tap the color matching the ink display color
+}
+
+data class StroopChallenge(
+  val wordItem: ColorItem,
+  val inkItem: ColorItem,
+  val rule: StroopTargetRule,
+  val targetColor: ColorItem,
+  val options: List<ColorItem>
+)
+
+fun generateRandomStroop(): StroopChallenge {
+  val pool = COLOR_POOL.shuffled()
+  val wordItem = pool[0]
+  val inkItem = pool[1] // Conflicting color!
+  val rule = if (Random.nextBoolean()) StroopTargetRule.WORD_TEXT else StroopTargetRule.INK_COLOR
+  val targetColor = if (rule == StroopTargetRule.WORD_TEXT) wordItem else inkItem
+
+  // 4 selectable color options
+  val otherOptions = COLOR_POOL.filter { it != targetColor }.shuffled().take(3)
+  val options = (otherOptions + targetColor).shuffled()
+
+  return StroopChallenge(wordItem, inkItem, rule, targetColor, options)
+}
 
 @Composable
 fun StroopColorGame(
@@ -51,24 +90,31 @@ fun StroopColorGame(
   streak: Int,
   isRiskMode: Boolean,
   onBack: () -> Unit,
-  onSuccess: (scoreBonus: Int, accuracy: Int) -> Unit,
-  onFail: (reason: String) -> Unit
+  onRoundSuccess: (scoreBonus: Int, timeBonus: Float) -> Unit = { _, _ -> },
+  onRoundMistake: (timePenalty: Float, reason: String) -> Unit = { _, _ -> },
+  onSuccess: (scoreBonus: Int, accuracy: Int) -> Unit = { _, _ -> },
+  onFail: (reason: String) -> Unit = {}
 ) {
-  val colors = remember {
-    listOf(
-      ColorOptionItem("Kırmızı", Color(0xFFEF4444)),
-      ColorOptionItem("Mavi", Color(0xFF3B82F6)),
-      ColorOptionItem("Yeşil", Color(0xFF10B981)),
-      ColorOptionItem("Sarı", Color(0xFFFBBF24))
-    )
-  }
+  var totalCompleted by remember { mutableIntStateOf(0) }
+  var challenge by remember { mutableStateOf(generateRandomStroop()) }
+  var feedbackText by remember { mutableStateOf("") }
+  var feedbackIsSuccess by remember { mutableStateOf(true) }
 
-  val targetCount = if (isRiskMode) 5 else 3
-  var completedCount by remember { mutableIntStateOf(0) }
-  var targetColorIndex by remember { mutableIntStateOf(Random.nextInt(colors.size)) }
-
-  fun pickNext() {
-    targetColorIndex = (targetColorIndex + 1 + Random.nextInt(colors.size - 1)) % colors.size
+  fun onOptionTapped(chosen: ColorItem) {
+    if (chosen == challenge.targetColor) {
+      totalCompleted++
+      feedbackText = "✓ HARİKA! (+90)"
+      feedbackIsSuccess = true
+      onRoundSuccess(90, 1.8f)
+      challenge = generateRandomStroop()
+    } else {
+      feedbackText = "✗ YANLIŞ RENK!"
+      feedbackIsSuccess = false
+      onRoundMistake(2.0f, "Hatalı renk seçtin! Doğru: ${challenge.targetColor.name}")
+      if (!isRiskMode) {
+        challenge = generateRandomStroop()
+      }
+    }
   }
 
   Column(
@@ -76,143 +122,195 @@ fun StroopColorGame(
     horizontalAlignment = Alignment.CenterHorizontally
   ) {
     GameTopBar(
-      title = "Renk Seçimi",
+      title = "Renk & Beyin Çelişkisi",
       streak = streak,
       isRiskMode = isRiskMode,
       onBack = onBack
     )
 
-    Text(
-      text = "Sıradaki rengi hızlıca seç! Dikkatli ol, karıştırma!",
-      color = TextWhiteTranslucent,
-      fontSize = 13.sp
-    )
-
-    Spacer(modifier = Modifier.height(28.dp))
-
-    // Blue pill banner (Directly matching screenshot column 4: "Maviye bas!")
-    Box(
+    // Skor ve Geri Bildirim
+    Row(
       modifier = Modifier
         .fillMaxWidth()
-        .padding(horizontal = 30.dp)
-        .shadow(16.dp, RoundedCornerShape(26.dp), spotColor = BluePrimary.copy(alpha = 0.6f))
-        .clip(RoundedCornerShape(26.dp))
-        .background(BluePrimary)
-        .border(2.5.dp, Color.White, RoundedCornerShape(26.dp))
-        .padding(vertical = 16.dp),
-      contentAlignment = Alignment.Center
+        .padding(horizontal = 26.dp),
+      horizontalArrangement = Arrangement.SpaceBetween,
+      verticalAlignment = Alignment.CenterVertically
     ) {
-      Text(
-        text = "🎯 ${colors[targetColorIndex].name.uppercase()}'YE BAS!",
-        color = Color.White,
-        fontSize = 24.sp,
-        fontWeight = FontWeight.Black,
-        letterSpacing = 1.sp
-      )
+      Box(
+        modifier = Modifier
+          .clip(RoundedCornerShape(12.dp))
+          .background(Color.Black.copy(alpha = 0.5f))
+          .border(1.dp, SkyBlueAccent, RoundedCornerShape(12.dp))
+          .padding(horizontal = 12.dp, vertical = 4.dp)
+      ) {
+        Text(
+          text = "Tamamlanan: $totalCompleted",
+          color = SkyBlueAccent,
+          fontSize = 13.sp,
+          fontWeight = FontWeight.Bold
+        )
+      }
+
+      if (feedbackText.isNotEmpty()) {
+        Text(
+          text = feedbackText,
+          color = if (feedbackIsSuccess) VibrantGreen else VibrantRed,
+          fontSize = 12.sp,
+          fontWeight = FontWeight.Black
+        )
+      }
     }
 
-    Spacer(modifier = Modifier.height(20.dp))
+    Spacer(modifier = Modifier.height(14.dp))
 
-    // Clear instruction tag pointing to color buttons
+    // Kural İpucu Banner'ı
+    val ruleDescription = if (challenge.rule == StroopTargetRule.WORD_TEXT) {
+      "YAZILAN KELİMENİN RENGİNE BAS!"
+    } else {
+      "MÜREKKEP / YAZI RENGİNE BAS!"
+    }
+
     Box(
       modifier = Modifier
         .clip(RoundedCornerShape(16.dp))
-        .background(Color.Black.copy(alpha = 0.55f))
-        .border(1.5.dp, SkyBlueAccent, RoundedCornerShape(16.dp))
+        .background(Color.Black.copy(alpha = 0.6f))
+        .border(1.5.dp, NeonGold, RoundedCornerShape(16.dp))
         .padding(horizontal = 16.dp, vertical = 6.dp)
     ) {
       Text(
-        text = "👇 AŞAĞIDAKİ DOĞRU RENGE DOKUN 👇",
-        color = SkyBlueAccent,
+        text = "⚡ KURAL: $ruleDescription",
+        color = NeonGold,
         fontSize = 12.sp,
-        fontWeight = FontWeight.ExtraBold,
-        letterSpacing = 1.sp
+        fontWeight = FontWeight.Black,
+        letterSpacing = 0.5.sp
       )
     }
 
-    Spacer(modifier = Modifier.height(20.dp))
+    Spacer(modifier = Modifier.height(16.dp))
 
-    // 4 Big Shiny Color Buttons (2x2 grid) with distinct high-contrast white rings
+    // Stroop Çelişki Kartı
     Box(
       modifier = Modifier
-        .weight(1f)
         .fillMaxWidth()
-        .padding(horizontal = 36.dp),
+        .padding(horizontal = 28.dp)
+        .shadow(16.dp, RoundedCornerShape(26.dp), spotColor = challenge.inkItem.color.copy(alpha = 0.5f))
+        .clip(RoundedCornerShape(26.dp))
+        .background(CardWhite)
+        .border(3.dp, challenge.inkItem.color, RoundedCornerShape(26.dp))
+        .padding(vertical = 24.dp),
       contentAlignment = Alignment.Center
     ) {
-      LazyVerticalGrid(
-        columns = GridCells.Fixed(2),
-        horizontalArrangement = Arrangement.spacedBy(24.dp),
-        verticalArrangement = Arrangement.spacedBy(24.dp)
+      Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(
+          text = challenge.wordItem.name.uppercase(),
+          color = challenge.inkItem.color,
+          fontSize = 42.sp,
+          fontWeight = FontWeight.Black,
+          letterSpacing = 2.sp
+        )
+        Text(
+          text = "(Yazı: ${challenge.wordItem.name} • Renk: ${challenge.inkItem.name})",
+          color = TextDark.copy(alpha = 0.6f),
+          fontSize = 11.sp,
+          fontWeight = FontWeight.SemiBold
+        )
+      }
+    }
+
+    Spacer(modifier = Modifier.height(16.dp))
+
+    Text(
+      text = "👇 AŞAĞIDAKİ DOĞRU BALONA DOKUN 👇",
+      color = SkyBlueAccent,
+      fontSize = 12.sp,
+      fontWeight = FontWeight.Black,
+      letterSpacing = 1.sp
+    )
+
+    Spacer(modifier = Modifier.height(16.dp))
+
+    // Renk Balonları (2x2 Grid)
+    Column(
+      modifier = Modifier
+        .fillMaxWidth()
+        .padding(horizontal = 28.dp),
+      verticalArrangement = Arrangement.spacedBy(14.dp)
+    ) {
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(14.dp)
       ) {
-        items(colors.size) { index ->
-          val item = colors[index]
-          Box(
-            modifier = Modifier
-              .size(115.dp)
-              .shadow(18.dp, CircleShape, spotColor = item.color.copy(alpha = 0.7f))
-              .clip(CircleShape)
-              .background(item.color)
-              .border(4.dp, Color.White, CircleShape)
-              .clickable {
-                if (index == targetColorIndex) {
-                  completedCount++
-                  if (completedCount >= targetCount) {
-                    onSuccess(completedCount * 30, 100)
-                  } else {
-                    pickNext()
-                  }
-                } else {
-                  if (isRiskMode) {
-                    onFail("Yanlış renge dokundun!")
-                  } else {
-                    pickNext()
-                  }
-                }
-              },
-            contentAlignment = Alignment.Center
-          ) {
-            Column(
-              horizontalAlignment = Alignment.CenterHorizontally,
-              verticalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-              Box(
-                modifier = Modifier
-                  .size(36.dp)
-                  .clip(CircleShape)
-                  .background(Color.White.copy(alpha = 0.45f)),
-                contentAlignment = Alignment.Center
-              ) {
-                Box(
-                  modifier = Modifier
-                    .size(16.dp)
-                    .clip(CircleShape)
-                    .background(Color.White.copy(alpha = 0.8f))
-                )
-              }
-              Text(
-                text = item.name,
-                color = Color.White,
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Black
-              )
-            }
-          }
+        ColorBalloon(item = challenge.options[0], modifier = Modifier.weight(1f)) {
+          onOptionTapped(challenge.options[0])
+        }
+        ColorBalloon(item = challenge.options[1], modifier = Modifier.weight(1f)) {
+          onOptionTapped(challenge.options[1])
+        }
+      }
+
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(14.dp)
+      ) {
+        ColorBalloon(item = challenge.options[2], modifier = Modifier.weight(1f)) {
+          onOptionTapped(challenge.options[2])
+        }
+        ColorBalloon(item = challenge.options[3], modifier = Modifier.weight(1f)) {
+          onOptionTapped(challenge.options[3])
         }
       }
     }
 
-    // Bottom Circular Timer & Progress
+    Spacer(modifier = Modifier.weight(1f))
+
+    // Alt Süre
     Box(
       modifier = Modifier
         .fillMaxWidth()
-        .padding(bottom = 20.dp),
+        .padding(bottom = 16.dp),
       contentAlignment = Alignment.Center
     ) {
       CircularTimer(
         remainingSeconds = remainingSeconds,
         totalDurationSeconds = durationSeconds,
-        size = 78.dp
+        size = 74.dp
+      )
+    }
+  }
+}
+
+@Composable
+private fun ColorBalloon(
+  item: ColorItem,
+  modifier: Modifier = Modifier,
+  onClick: () -> Unit
+) {
+  Box(
+    modifier = modifier
+      .height(68.dp)
+      .shadow(8.dp, RoundedCornerShape(20.dp), spotColor = item.color.copy(alpha = 0.5f))
+      .clip(RoundedCornerShape(20.dp))
+      .background(item.color)
+      .border(2.5.dp, Color.White, RoundedCornerShape(20.dp))
+      .clickable { onClick() }
+      .padding(horizontal = 12.dp),
+    contentAlignment = Alignment.Center
+  ) {
+    Row(
+      verticalAlignment = Alignment.CenterVertically,
+      horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+      Box(
+        modifier = Modifier
+          .size(16.dp)
+          .clip(CircleShape)
+          .background(Color.White)
+      )
+      Text(
+        text = item.name,
+        color = Color.White,
+        fontSize = 18.sp,
+        fontWeight = FontWeight.Black
       )
     }
   }

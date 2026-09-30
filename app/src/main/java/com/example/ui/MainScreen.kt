@@ -32,6 +32,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.data.model.GameType
+import com.example.ui.components.AdRewardType
+import com.example.ui.components.AdSimulationDialog
 import com.example.ui.components.GameResultScreen
 import com.example.ui.components.LuckyWheelDialog
 import com.example.ui.components.PrivacyPolicyDialog
@@ -73,6 +75,8 @@ fun MainScreen(viewModel: GameViewModel) {
   val showReactionAnalytics by viewModel.showReactionAnalytics.collectAsStateWithLifecycle()
   val showSettings by viewModel.showSettings.collectAsStateWithLifecycle()
   val showPrivacyPolicy by viewModel.showPrivacyPolicy.collectAsStateWithLifecycle()
+  val showAdSimulation by viewModel.showAdSimulation.collectAsStateWithLifecycle()
+  val isAdFree by viewModel.isAdFree.collectAsStateWithLifecycle()
 
   // Handle Android back button
   BackHandler(enabled = screenState != ScreenState.START && screenState != ScreenState.HOME) {
@@ -148,6 +152,9 @@ fun MainScreen(viewModel: GameViewModel) {
             },
             onOpenProfile = {
               viewModel.selectTab(3)
+            },
+            onOpenPrivacyPolicy = {
+              viewModel.openPrivacyPolicy()
             }
           )
           ScreenState.HOME -> HomeScreen(
@@ -184,6 +191,9 @@ fun MainScreen(viewModel: GameViewModel) {
               GameplayContainerScreen(
                 session = session,
                 onBack = { viewModel.backToHome() },
+                onRoundSuccess = { scoreBonus, timeBonus -> viewModel.onRoundSuccess(scoreBonus, timeBonus) },
+                onRoundMistake = { timePenalty, reason -> viewModel.onRoundMistake(timePenalty, reason) },
+                onSetTimerPaused = { paused -> viewModel.setTimerPaused(paused) },
                 onSuccess = { scoreBonus, accuracy -> viewModel.onGameSuccess(scoreBonus, accuracy) },
                 onFail = { reason -> viewModel.onGameFail(reason) }
               )
@@ -194,7 +204,9 @@ fun MainScreen(viewModel: GameViewModel) {
               GameResultScreen(
                 session = session,
                 onContinue = { viewModel.backToHome() },
-                onPlayAgain = { viewModel.playAgain() }
+                onPlayAgain = { viewModel.playAgain() },
+                onWatchAdDouble = { viewModel.requestRewardedAd(AdRewardType.DOUBLE_REWARD) },
+                onWatchAdSecondChance = { viewModel.requestRewardedAd(AdRewardType.SECOND_CHANCE) }
               )
             }
           }
@@ -223,7 +235,12 @@ fun MainScreen(viewModel: GameViewModel) {
         LuckyWheelDialog(
           soundEnabled = userProfile.soundEnabled,
           vibrationEnabled = userProfile.vibrationEnabled,
+          hasSpunToday = userProfile.hasSpunWheelToday,
           onRewardClaimed = { coins, xp -> viewModel.claimLuckyWheelReward(coins, xp) },
+          onWatchAdForSpin = {
+            viewModel.dismissLuckyWheel()
+            viewModel.requestRewardedAd(AdRewardType.EXTRA_SPIN)
+          },
           onDismiss = { viewModel.dismissLuckyWheel() }
         )
       }
@@ -259,6 +276,15 @@ fun MainScreen(viewModel: GameViewModel) {
       if (showPrivacyPolicy) {
         PrivacyPolicyDialog(
           onDismiss = { viewModel.dismissPrivacyPolicy() }
+        )
+      }
+
+      // Ad Simulation Dialog (Google AdMob format for rewarded video ads)
+      showAdSimulation?.let { adType ->
+        AdSimulationDialog(
+          rewardType = adType,
+          onRewardGranted = { viewModel.onAdRewardGranted(adType) },
+          onDismiss = { viewModel.dismissAdSimulation() }
         )
       }
     }
