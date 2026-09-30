@@ -1,0 +1,6 @@
+{
+  "name": "10 SEC",
+  "description": "10 saniyede refleks, zeka, hafıza ve odaklanma mini oyunları. Türkiye lig sıralaması ve beyin skoru!",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
