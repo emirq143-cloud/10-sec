@@ -55,7 +55,8 @@ data class UserProfile(
   val bestReactionTimeMs: Int = 194,
   val reactionHistory: List<Int> = listOf(315, 298, 284, 272, 259, 278),
   val hasSpunWheelToday: Boolean = false,
-  val luckySpinsCount: Int = 1
+  val luckySpinsCount: Int = 1,
+  val lastWheelSpinDate: String = ""
 ) {
   val league: League
     get() = League.fromScore(totalScore)
@@ -78,7 +79,8 @@ data class AvatarItem(
   val id: String,
   val name: String,
   val emoji: String,
-  val unlockLevel: Int,
+  val unlockLevel: Int = 1,
+  val priceCoins: Int = 0,
   val isUnlocked: Boolean = false,
   val description: String = ""
 )

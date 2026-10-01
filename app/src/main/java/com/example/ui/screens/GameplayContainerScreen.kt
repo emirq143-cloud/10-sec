@@ -1,16 +1,28 @@
 package com.example.ui.screens
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.dp
 import com.example.R
 import com.example.data.model.GameType
 import com.example.ui.GamePlaySession
@@ -22,6 +34,7 @@ import com.example.ui.screens.games.QuickMathGame
 import com.example.ui.screens.games.StroopColorGame
 import com.example.ui.screens.games.SymbolMemoryGame
 import com.example.ui.screens.games.WorkingMemoryGame
+import kotlinx.coroutines.launch
 
 @Composable
 fun GameplayContainerScreen(
@@ -36,7 +49,87 @@ fun GameplayContainerScreen(
 ) {
   BackHandler(onBack = onBack)
 
-  Box(modifier = modifier.fillMaxSize()) {
+  val flashAlpha = remember { Animatable(0f) }
+  var flashColor by remember { mutableStateOf(Color.Transparent) }
+  val scope = rememberCoroutineScope()
+
+  fun triggerFlash(color: Color, durationMs: Int = 360) {
+    flashColor = color
+    scope.launch {
+      flashAlpha.snapTo(1f)
+      flashAlpha.animateTo(
+        targetValue = 0f,
+        animationSpec = tween(durationMillis = durationMs, easing = LinearOutSlowInEasing)
+      )
+    }
+  }
+
+  // Intercepted handlers that trigger visual feedback
+  val handleRoundSuccess: (Int, Float) -> Unit = { scoreBonus, timeBonus ->
+    triggerFlash(Color(0xFF10B981), durationMs = 380) // Vibrant Emerald Green
+    onRoundSuccess(scoreBonus, timeBonus)
+  }
+
+  val handleRoundMistake: (Float, String) -> Unit = { timePenalty, reason ->
+    triggerFlash(Color(0xFFEF4444), durationMs = 450) // Bright Crimson Red
+    onRoundMistake(timePenalty, reason)
+  }
+
+  val handleSuccess: (Int, Int) -> Unit = { scoreBonus, accuracy ->
+    triggerFlash(Color(0xFF10B981), durationMs = 450)
+    onSuccess(scoreBonus, accuracy)
+  }
+
+  val handleFail: (String) -> Unit = { reason ->
+    triggerFlash(Color(0xFFEF4444), durationMs = 500)
+    onFail(reason)
+  }
+
+  Box(
+    modifier = modifier
+      .fillMaxSize()
+      .drawWithContent {
+        drawContent()
+        val alpha = flashAlpha.value
+        if (alpha > 0.005f) {
+          // 1. Subtle, translucent full-screen wash
+          drawRect(
+            color = flashColor.copy(alpha = alpha * 0.22f),
+            size = size
+          )
+          // 2. High-visibility glowing neon border frame along screen edges
+          drawRect(
+            color = flashColor.copy(alpha = alpha * 0.90f),
+            size = size,
+            style = Stroke(width = 10.dp.toPx())
+          )
+          // 3. Top and bottom ambient glow
+          drawRect(
+            brush = Brush.verticalGradient(
+              colors = listOf(
+                flashColor.copy(alpha = alpha * 0.45f),
+                Color.Transparent
+              ),
+              startY = 0f,
+              endY = 140.dp.toPx()
+            ),
+            size = Size(size.width, 140.dp.toPx())
+          )
+          drawRect(
+            brush = Brush.verticalGradient(
+              colors = listOf(
+                Color.Transparent,
+                flashColor.copy(alpha = alpha * 0.45f)
+              ),
+              startY = size.height - 140.dp.toPx(),
+              endY = size.height
+            ),
+            topLeft = androidx.compose.ui.geometry.Offset(0f, size.height - 140.dp.toPx()),
+            size = Size(size.width, 140.dp.toPx())
+          )
+        }
+      }
+  ) {
     // Beautiful atmospheric twilight mountain & sunset wallpaper
     Image(
       painter = painterResource(id = R.drawable.twilight_mountain_bg_1790506194088),
@@ -67,10 +160,10 @@ fun GameplayContainerScreen(
         streak = session.currentStreak,
         isRiskMode = session.isRiskMode,
         onBack = onBack,
-        onRoundSuccess = onRoundSuccess,
-        onRoundMistake = onRoundMistake,
-        onSuccess = onSuccess,
-        onFail = onFail
+        onRoundSuccess = handleRoundSuccess,
+        onRoundMistake = handleRoundMistake,
+        onSuccess = handleSuccess,
+        onFail = handleFail
       )
       GameType.STROOP_COLOR -> StroopColorGame(
         remainingSeconds = session.remainingSeconds,
@@ -78,10 +171,10 @@ fun GameplayContainerScreen(
         streak = session.currentStreak,
         isRiskMode = session.isRiskMode,
         onBack = onBack,
-        onRoundSuccess = onRoundSuccess,
-        onRoundMistake = onRoundMistake,
-        onSuccess = onSuccess,
-        onFail = onFail
+        onRoundSuccess = handleRoundSuccess,
+        onRoundMistake = handleRoundMistake,
+        onSuccess = handleSuccess,
+        onFail = handleFail
       )
       GameType.MEMORY_SYMBOLS -> SymbolMemoryGame(
         remainingSeconds = session.remainingSeconds,
@@ -90,10 +183,10 @@ fun GameplayContainerScreen(
         isRiskMode = session.isRiskMode,
         onBack = onBack,
         onSetTimerPaused = onSetTimerPaused,
-        onRoundSuccess = onRoundSuccess,
-        onRoundMistake = onRoundMistake,
-        onSuccess = onSuccess,
-        onFail = onFail
+        onRoundSuccess = handleRoundSuccess,
+        onRoundMistake = handleRoundMistake,
+        onSuccess = handleSuccess,
+        onFail = handleFail
       )
       GameType.QUICK_MATH -> QuickMathGame(
         remainingSeconds = session.remainingSeconds,
@@ -101,10 +194,10 @@ fun GameplayContainerScreen(
         streak = session.currentStreak,
         isRiskMode = session.isRiskMode,
         onBack = onBack,
-        onRoundSuccess = onRoundSuccess,
-        onRoundMistake = onRoundMistake,
-        onSuccess = onSuccess,
-        onFail = onFail
+        onRoundSuccess = handleRoundSuccess,
+        onRoundMistake = handleRoundMistake,
+        onSuccess = handleSuccess,
+        onFail = handleFail
       )
       GameType.FIND_DIFFERENCE -> FindDifferenceGame(
         remainingSeconds = session.remainingSeconds,
@@ -112,10 +205,10 @@ fun GameplayContainerScreen(
         streak = session.currentStreak,
         isRiskMode = session.isRiskMode,
         onBack = onBack,
-        onRoundSuccess = onRoundSuccess,
-        onRoundMistake = onRoundMistake,
-        onSuccess = onSuccess,
-        onFail = onFail
+        onRoundSuccess = handleRoundSuccess,
+        onRoundMistake = handleRoundMistake,
+        onSuccess = handleSuccess,
+        onFail = handleFail
       )
       GameType.LOGIC_PATTERN -> LogicPatternGame(
         remainingSeconds = session.remainingSeconds,
@@ -123,10 +216,10 @@ fun GameplayContainerScreen(
         streak = session.currentStreak,
         isRiskMode = session.isRiskMode,
         onBack = onBack,
-        onRoundSuccess = onRoundSuccess,
-        onRoundMistake = onRoundMistake,
-        onSuccess = onSuccess,
-        onFail = onFail
+        onRoundSuccess = handleRoundSuccess,
+        onRoundMistake = handleRoundMistake,
+        onSuccess = handleSuccess,
+        onFail = handleFail
       )
       GameType.ESTIMATION_BAR -> EstimationBarGame(
         remainingSeconds = session.remainingSeconds,
@@ -134,10 +227,10 @@ fun GameplayContainerScreen(
         streak = session.currentStreak,
         isRiskMode = session.isRiskMode,
         onBack = onBack,
-        onRoundSuccess = onRoundSuccess,
-        onRoundMistake = onRoundMistake,
-        onSuccess = onSuccess,
-        onFail = onFail
+        onRoundSuccess = handleRoundSuccess,
+        onRoundMistake = handleRoundMistake,
+        onSuccess = handleSuccess,
+        onFail = handleFail
       )
       GameType.WORKING_MEMORY -> WorkingMemoryGame(
         remainingSeconds = session.remainingSeconds,
@@ -146,10 +239,10 @@ fun GameplayContainerScreen(
         isRiskMode = session.isRiskMode,
         onBack = onBack,
         onSetTimerPaused = onSetTimerPaused,
-        onRoundSuccess = onRoundSuccess,
-        onRoundMistake = onRoundMistake,
-        onSuccess = onSuccess,
-        onFail = onFail
+        onRoundSuccess = handleRoundSuccess,
+        onRoundMistake = handleRoundMistake,
+        onSuccess = handleSuccess,
+        onFail = handleFail
       )
     }
   }

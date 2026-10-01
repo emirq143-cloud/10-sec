@@ -183,6 +183,7 @@ fun MainScreen(viewModel: GameViewModel) {
             userProfile = userProfile,
             avatars = avatars,
             onSelectAvatar = { viewModel.selectAvatar(it) },
+            onPurchaseAvatar = { viewModel.purchaseAvatar(it) },
             onOpenSettings = { viewModel.openSettings() },
             onOpenReactionAnalytics = { viewModel.openReactionAnalytics() }
           )

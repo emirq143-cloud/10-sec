@@ -287,28 +287,51 @@ fun LuckyWheelDialog(
           }
         }
 
-        // Spin Button or Ad Spin Button
-        if (hasSpunToday && wonReward != null) {
-          Button(
-            onClick = onWatchAdForSpin,
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF59E0B)),
-            shape = RoundedCornerShape(20.dp),
-            modifier = Modifier
-              .fillMaxWidth()
-              .height(52.dp)
-              .shadow(10.dp, RoundedCornerShape(20.dp), spotColor = NeonGold.copy(alpha = 0.6f))
+        // Spin Button or Daily limit state
+        if (hasSpunToday) {
+          Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(8.dp)
           ) {
-            Row(
-              verticalAlignment = Alignment.CenterVertically,
-              horizontalArrangement = Arrangement.spacedBy(8.dp)
+            Box(
+              modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(14.dp))
+                .background(Color(0xFFF1F5F9))
+                .border(1.dp, Color(0xFFCBD5E1), RoundedCornerShape(14.dp))
+                .padding(vertical = 10.dp),
+              contentAlignment = Alignment.Center
             ) {
-              Text(text = "🎬", fontSize = 18.sp)
               Text(
-                text = "Reklam İzle & Tekrar Çevir (+1 Hak)!",
-                color = Color.Black,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Black
+                text = "⏰ Günlük Hak Kullanıldı (Yarın 00:00'da Yenilenir)",
+                color = TextDarkSecondary,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold
               )
+            }
+
+            Button(
+              onClick = onWatchAdForSpin,
+              colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF59E0B)),
+              shape = RoundedCornerShape(20.dp),
+              modifier = Modifier
+                .fillMaxWidth()
+                .height(48.dp)
+                .shadow(8.dp, RoundedCornerShape(20.dp), spotColor = NeonGold.copy(alpha = 0.5f))
+            ) {
+              Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+              ) {
+                Text(text = "🎬", fontSize = 16.sp)
+                Text(
+                  text = "Reklam İzle & Ekstra Hak Al (+1)",
+                  color = Color.Black,
+                  fontSize = 13.sp,
+                  fontWeight = FontWeight.Black
+                )
+              }
             }
           }
         } else {
@@ -326,9 +349,9 @@ fun LuckyWheelDialog(
               .shadow(if (!isSpinning) 10.dp else 0.dp, RoundedCornerShape(20.dp), spotColor = NeonGold.copy(alpha = 0.6f))
           ) {
             Text(
-              text = if (isSpinning) "ÇARK DÖNÜYOR..." else "ŞANSINI DENE: ÇEVİR! 🎯",
+              text = if (isSpinning) "ÇARK DÖNÜYOR..." else "GÜNLÜK HAKKINI KULLAN: ÇEVİR! 🎯",
               color = if (isSpinning) Color(0xFF94A3B8) else Color(0xFF78350F),
-              fontSize = 16.sp,
+              fontSize = 15.sp,
               fontWeight = FontWeight.Black
             )
           }

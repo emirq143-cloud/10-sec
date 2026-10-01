@@ -58,18 +58,23 @@ import com.example.ui.theme.VibrantPink
 
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Speed
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.IconButton
+import androidx.compose.ui.window.Dialog
 
 @Composable
 fun ProfileScreen(
   userProfile: UserProfile,
   avatars: List<AvatarItem>,
   onSelectAvatar: (String) -> Unit,
+  onPurchaseAvatar: (String) -> Unit = {},
   onOpenSettings: () -> Unit = {},
   onOpenReactionAnalytics: () -> Unit = {},
   modifier: Modifier = Modifier
 ) {
   var avatarFilter by remember { mutableStateOf("Tümü") }
+  var avatarToPurchase by remember { mutableStateOf<AvatarItem?>(null) }
 
   val filteredAvatars = remember(avatarFilter, avatars) {
     when (avatarFilter) {
@@ -259,12 +264,31 @@ fun ProfileScreen(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
           ) {
-            Text(
-              text = "Karakterler",
-              color = TextDark,
-              fontSize = 18.sp,
-              fontWeight = FontWeight.Bold
-            )
+            Row(
+              verticalAlignment = Alignment.CenterVertically,
+              horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+              Text(
+                text = "Karakterler",
+                color = TextDark,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold
+              )
+              Box(
+                modifier = Modifier
+                  .clip(RoundedCornerShape(10.dp))
+                  .background(Color(0xFFFEF3C7))
+                  .border(1.dp, NeonGold, RoundedCornerShape(10.dp))
+                  .padding(horizontal = 8.dp, vertical = 2.dp)
+              ) {
+                Text(
+                  text = "🪙 ${userProfile.coins}",
+                  color = Color(0xFFB45309),
+                  fontSize = 11.sp,
+                  fontWeight = FontWeight.ExtraBold
+                )
+              }
+            }
 
             // Filter Tabs: Tümü, Açılanlar, Kilitli
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -299,7 +323,7 @@ fun ProfileScreen(
 
               Box(
                 modifier = Modifier
-                  .size(98.dp)
+                  .size(102.dp)
                   .shadow(
                     elevation = if (isSelected) 10.dp else 4.dp,
                     shape = RoundedCornerShape(20.dp),
@@ -312,24 +336,30 @@ fun ProfileScreen(
                     color = if (isSelected) NeonGold else if (avatar.isUnlocked) BluePrimary else Color(0xFFCBD5E1),
                     shape = RoundedCornerShape(20.dp)
                   )
-                  .clickable(enabled = avatar.isUnlocked) {
-                    onSelectAvatar(avatar.id)
+                  .clickable {
+                    if (avatar.isUnlocked) {
+                      onSelectAvatar(avatar.id)
+                    } else {
+                      avatarToPurchase = avatar
+                    }
                   }
-                  .padding(8.dp),
+                  .padding(6.dp),
                 contentAlignment = Alignment.Center
               ) {
                 Column(
                   horizontalAlignment = Alignment.CenterHorizontally,
                   verticalArrangement = Arrangement.Center
                 ) {
-                  Text(text = avatar.emoji, fontSize = 30.sp)
-                  Spacer(modifier = Modifier.height(3.dp))
+                  Text(text = avatar.emoji, fontSize = 28.sp)
+                  Spacer(modifier = Modifier.height(2.dp))
                   Text(
                     text = avatar.name,
                     color = if (avatar.isUnlocked) TextDark else TextDarkMuted,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.ExtraBold
                   )
+
+                  Spacer(modifier = Modifier.height(2.dp))
 
                   if (isSelected) {
                     Text(
@@ -346,12 +376,18 @@ fun ProfileScreen(
                       fontWeight = FontWeight.Bold
                     )
                   } else {
-                    Text(
-                      text = "Lv ${avatar.unlockLevel}",
-                      color = NeonOrange,
-                      fontSize = 9.sp,
-                      fontWeight = FontWeight.Bold
-                    )
+                    Row(
+                      verticalAlignment = Alignment.CenterVertically,
+                      horizontalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
+                      Text(text = "🪙", fontSize = 9.sp)
+                      Text(
+                        text = "${avatar.priceCoins}",
+                        color = Color(0xFFB45309),
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.ExtraBold
+                      )
+                    }
                   }
                 }
 
@@ -393,6 +429,159 @@ fun ProfileScreen(
           }
         }
         Spacer(modifier = Modifier.height(16.dp))
+      }
+    }
+
+    avatarToPurchase?.let { targetAvatar ->
+      AvatarPurchaseModal(
+        avatar = targetAvatar,
+        userCoins = userProfile.coins,
+        onConfirmPurchase = {
+          onPurchaseAvatar(targetAvatar.id)
+          avatarToPurchase = null
+        },
+        onDismiss = { avatarToPurchase = null }
+      )
+    }
+  }
+}
+
+@Composable
+fun AvatarPurchaseModal(
+  avatar: AvatarItem,
+  userCoins: Int,
+  onConfirmPurchase: () -> Unit,
+  onDismiss: () -> Unit
+) {
+  val canAfford = userCoins >= avatar.priceCoins
+
+  Dialog(onDismissRequest = onDismiss) {
+    Box(
+      modifier = Modifier
+        .fillMaxWidth()
+        .clip(RoundedCornerShape(26.dp))
+        .background(CardWhite)
+        .border(2.5.dp, if (canAfford) NeonGold else Color(0xFFCBD5E1), RoundedCornerShape(26.dp))
+        .padding(22.dp),
+      contentAlignment = Alignment.Center
+    ) {
+      Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(14.dp)
+      ) {
+        // Emoji in glowing avatar ring
+        Box(
+          modifier = Modifier
+            .size(76.dp)
+            .shadow(12.dp, CircleShape, spotColor = if (canAfford) NeonGold else Color(0x33000000))
+            .clip(CircleShape)
+            .background(if (canAfford) Color(0xFFFEF3C7) else Color(0xFFF1F5F9))
+            .border(2.5.dp, if (canAfford) NeonGold else Color(0xFF94A3B8), CircleShape),
+          contentAlignment = Alignment.Center
+        ) {
+          Text(text = avatar.emoji, fontSize = 42.sp)
+        }
+
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+          Text(
+            text = avatar.name,
+            color = TextDark,
+            fontSize = 20.sp,
+            fontWeight = FontWeight.ExtraBold
+          )
+          Text(
+            text = avatar.description,
+            color = TextDarkSecondary,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Medium
+          )
+        }
+
+        // Price & Balance Card
+        Box(
+          modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(Color(0xFFF8FAFC))
+            .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(16.dp))
+            .padding(14.dp)
+        ) {
+          Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+          ) {
+            Column {
+              Text(text = "Fiyat", color = TextDarkSecondary, fontSize = 11.sp)
+              Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(text = "🪙", fontSize = 14.sp)
+                Text(text = "${avatar.priceCoins} Altın", color = Color(0xFFB45309), fontSize = 15.sp, fontWeight = FontWeight.Black)
+              }
+            }
+
+            Column(horizontalAlignment = Alignment.End) {
+              Text(text = "Senin Bakiyen", color = TextDarkSecondary, fontSize = 11.sp)
+              Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(text = "🪙", fontSize = 14.sp)
+                Text(
+                  text = "$userCoins Altın",
+                  color = if (canAfford) VibrantGreen else Color(0xFFEF4444),
+                  fontSize = 15.sp,
+                  fontWeight = FontWeight.Black
+                )
+              }
+            }
+          }
+        }
+
+        if (!canAfford) {
+          Box(
+            modifier = Modifier
+              .fillMaxWidth()
+              .clip(RoundedCornerShape(12.dp))
+              .background(Color(0xFFFEF2F2))
+              .border(1.dp, Color(0xFFFCA5A5), RoundedCornerShape(12.dp))
+              .padding(10.dp)
+          ) {
+            Text(
+              text = "⚠️ Yetersiz Altın! ${avatar.priceCoins - userCoins} altın daha gerekiyor. Mini oyunlar oynayarak veya çarkı çevirerek altın kazanabilirsin.",
+              color = Color(0xFFDC2626),
+              fontSize = 12.sp,
+              fontWeight = FontWeight.SemiBold
+            )
+          }
+        }
+
+        // Action Buttons
+        Row(
+          modifier = Modifier.fillMaxWidth(),
+          horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+          Button(
+            onClick = onDismiss,
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF1F5F9)),
+            shape = RoundedCornerShape(16.dp),
+            modifier = Modifier
+              .weight(1f)
+              .height(48.dp)
+          ) {
+            Text(text = "Vazgeç", color = TextDarkSecondary, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+          }
+
+          if (canAfford) {
+            Button(
+              onClick = onConfirmPurchase,
+              colors = ButtonDefaults.buttonColors(containerColor = NeonGold),
+              shape = RoundedCornerShape(16.dp),
+              modifier = Modifier
+                .weight(1.5f)
+                .height(48.dp)
+                .shadow(8.dp, RoundedCornerShape(16.dp), spotColor = NeonGold.copy(alpha = 0.6f))
+            ) {
+              Text(text = "Satın Al & Kuşan ✨", color = Color(0xFF78350F), fontWeight = FontWeight.Black, fontSize = 13.sp)
+            }
+          }
+        }
       }
     }
   }

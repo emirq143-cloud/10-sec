@@ -43,6 +43,9 @@ data class GamePlaySession(
   val currentScore: Int = 0,
   val currentStreak: Int = 0,
   val questionsAnswered: Int = 0,
+  val correctCount: Int = 0,
+  val mistakeCount: Int = 0,
+  val coinsEarned: Int = 0,
   val comboStreak: Int = 0,
   val isTimerPaused: Boolean = false,
   val isFinished: Boolean = false,
@@ -254,22 +257,23 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     _activeSession.update { it?.copy(isTimerPaused = paused) }
   }
 
-  fun onRoundSuccess(scoreBonus: Int = 100, timeBonus: Float = 2.5f) {
+  fun onRoundSuccess(scoreBonus: Int = 100, xpBonus: Int = 15, coinBonus: Int = 5) {
     val session = _activeSession.value ?: return
     if (session.isFinished) return
 
     val multiplier = if (session.isRiskMode) 3 else 1
     val addedScore = scoreBonus * multiplier
-    val addedXp = 15 * multiplier
-    val maxDuration = if (session.isRiskMode) session.gameType.riskDurationSeconds.toFloat() else session.gameType.defaultDurationSeconds.toFloat()
-    val newRemaining = kotlin.math.min(maxDuration + 5f, session.remainingSeconds + timeBonus)
+    val addedXp = xpBonus * multiplier
+    val addedCoins = coinBonus * multiplier
 
     _activeSession.value = session.copy(
       currentScore = session.currentScore + addedScore,
       xpGained = session.xpGained + addedXp,
+      coinsEarned = session.coinsEarned + addedCoins,
       questionsAnswered = session.questionsAnswered + 1,
-      comboStreak = session.comboStreak + 1,
-      remainingSeconds = newRemaining
+      correctCount = session.correctCount + 1,
+      comboStreak = session.comboStreak + 1
+      // No time addition: saniye artırma yok!
     )
 
     val profile = userProfile.value
@@ -277,7 +281,11 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     SoundHapticManager.vibrateSuccess(context, profile.vibrationEnabled)
   }
 
-  fun onRoundMistake(timePenalty: Float = 2.0f, reason: String = "Hatalı cevap!") {
+  fun onRoundSuccess(scoreBonus: Int, timeBonus: Float) {
+    onRoundSuccess(scoreBonus = scoreBonus, xpBonus = 15, coinBonus = 5)
+  }
+
+  fun onRoundMistake(reason: String = "Yanlış cevap!") {
     val session = _activeSession.value ?: return
     if (session.isFinished) return
 
@@ -290,17 +298,37 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
       _activeSession.value = session.copy(
         isFinished = true,
         isVictory = false,
+        questionsAnswered = session.questionsAnswered + 1,
+        mistakeCount = session.mistakeCount + 1,
         feedbackText = "Risk Modunda Hata Yaptın: $reason"
       )
       onGameCompleted(isVictory = false, accuracy = 20)
     } else {
-      val newRemaining = max(0.5f, session.remainingSeconds - timePenalty)
+      // Normal mod: Saniye azaltma yok! Direkt yanlış olarak işaretle ve devam et
       _activeSession.value = session.copy(
-        remainingSeconds = newRemaining,
+        questionsAnswered = session.questionsAnswered + 1,
+        mistakeCount = session.mistakeCount + 1,
         comboStreak = 0,
         feedbackText = reason
       )
     }
+  }
+
+  fun onRoundMistake(timePenalty: Float, reason: String) {
+    onRoundMistake(reason = reason)
+  }
+
+  fun purchaseAvatar(avatarId: String): Boolean {
+    val success = repository.purchaseAvatar(avatarId)
+    val profile = userProfile.value
+    if (success) {
+      SoundHapticManager.playFanfare(profile.soundEnabled)
+      SoundHapticManager.vibrateSuccess(context, profile.vibrationEnabled)
+    } else {
+      SoundHapticManager.playFail(profile.soundEnabled)
+      SoundHapticManager.vibrateFail(context, profile.vibrationEnabled)
+    }
+    return success
   }
 
   fun onGameSuccess(scoreBonus: Int, accuracy: Int = 100) {
@@ -335,31 +363,39 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     val session = _activeSession.value ?: return
     if (session.isFinished) return
 
+    val isWin = session.currentScore > 0 || session.questionsAnswered > 0
     timerJob?.cancel()
     _activeSession.value = session.copy(
       isFinished = true,
-      isVictory = false,
-      accuracyPercent = 20,
-      feedbackText = reason
+      isVictory = isWin,
+      accuracyPercent = if (isWin) 70 else 20,
+      feedbackText = if (isWin) "${session.correctCount} doğru, ${session.mistakeCount} yanlış!" else reason
     )
     val profile = userProfile.value
     SoundHapticManager.playFail(profile.soundEnabled)
     SoundHapticManager.vibrateFail(context, profile.vibrationEnabled)
-    onGameCompleted(isVictory = false, accuracy = 20)
+    onGameCompleted(isVictory = isWin, accuracy = if (isWin) 70 else 20)
   }
 
   private fun onGameCompleted(isVictory: Boolean, accuracy: Int) {
     val session = _activeSession.value ?: return
     val totalTime = session.durationSeconds - session.remainingSeconds
 
+    val totalCorrect = session.correctCount
+    val totalMistakes = session.mistakeCount
+    val computedAccuracy = if (totalCorrect + totalMistakes > 0) {
+      ((totalCorrect.toFloat() / (totalCorrect + totalMistakes)) * 100).toInt()
+    } else accuracy
+
     repository.recordGameResult(
       gameType = session.gameType,
       score = if (isVictory) session.currentScore else 30,
       xpEarned = if (isVictory) session.xpGained else 15,
-      accuracyPercent = accuracy,
+      accuracyPercent = computedAccuracy,
       durationSeconds = max(1, totalTime.toInt()),
       isRiskMode = session.isRiskMode,
-      isVictory = isVictory
+      isVictory = isVictory,
+      coinsEarned = session.coinsEarned
     )
 
     if (isVictory && (userProfile.value.currentStreak + 1) % 5 == 0) {

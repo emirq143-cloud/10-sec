@@ -1,6 +1,7 @@
 package com.example.data.repository
 
 import android.content.Context
+import android.content.SharedPreferences
 import com.example.data.local.AppDatabase
 import com.example.data.local.GameRecordEntity
 import com.example.data.model.AvatarItem
@@ -18,6 +19,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import kotlin.math.max
 import kotlin.math.min
 
@@ -34,6 +38,12 @@ class GameRepository(context: Context) {
   private val database = AppDatabase.getDatabase(context)
   private val gameDao = database.gameScoreDao()
   private val scope = CoroutineScope(Dispatchers.IO)
+  private val prefs: SharedPreferences = context.getSharedPreferences("brain_game_prefs", Context.MODE_PRIVATE)
+
+  private fun getTodayDateString(): String {
+    val sdf = SimpleDateFormat("yyyyMMdd", Locale.getDefault())
+    return sdf.format(Date())
+  }
 
   // Seed pool of active Turkey & Global players
   private val competitorsTurkey = listOf(
@@ -71,40 +81,73 @@ class GameRepository(context: Context) {
     Competitor("f5", "Burak", 7600, "🎮", "TR", League.SILVER)
   )
 
+  private val allCatalogAvatars = listOf(
+    AvatarItem("default", "Astronot", "🧑‍🚀", unlockLevel = 1, priceCoins = 0, isUnlocked = true, description = "İlk cesur maceracı (Ücretsiz)"),
+    AvatarItem("ninja", "Gölge Ninja", "🥷", unlockLevel = 1, priceCoins = 150, isUnlocked = false, description = "Sessiz ve yıldırım refleks ustası"),
+    AvatarItem("cat", "Uğurlu Kedi", "🐱", unlockLevel = 1, priceCoins = 200, isUnlocked = false, description = "Dokuz canlı refleks uzmanı"),
+    AvatarItem("robot", "Siber Robot", "🤖", unlockLevel = 1, priceCoins = 250, isUnlocked = false, description = "Hızlı işlemci ve hesaplama uzmanı"),
+    AvatarItem("alien", "Uzaylı Gezgin", "👽", unlockLevel = 1, priceCoins = 300, isUnlocked = false, description = "Bilinmeyen boyutların kaşifi"),
+    AvatarItem("detective", "Dedektif", "🕵️‍♂️", unlockLevel = 1, priceCoins = 350, isUnlocked = false, description = "Farkları milisaniyede sezen göz"),
+    AvatarItem("lion", "Kral Aslan", "🦁", unlockLevel = 1, priceCoins = 400, isUnlocked = false, description = "Reflekslerin ve cesaretin kralı"),
+    AvatarItem("wizard", "Zihin Büyücüsü", "🧙‍♂️", unlockLevel = 1, priceCoins = 500, isUnlocked = false, description = "Derin mantık ve hafıza büyücüsü"),
+    AvatarItem("dragon", "Ateş Ejderi", "🐲", unlockLevel = 1, priceCoins = 650, isUnlocked = false, description = "Alev saçan seri galibiyetler"),
+    AvatarItem("crown_king", "Altın Kral", "👑", unlockLevel = 1, priceCoins = 800, isUnlocked = false, description = "Tüm liglerin zirvesindeki efsane"),
+    AvatarItem("diamond_hero", "Elmas Şampiyon", "💎", unlockLevel = 1, priceCoins = 950, isUnlocked = false, description = "Saf odaklanma ve konsantrasyon"),
+    AvatarItem("samurai", "Neon Samuray", "⚔️", unlockLevel = 1, priceCoins = 1100, isUnlocked = false, description = "Kusursuz keskinlikte zihin"),
+    AvatarItem("fox", "Kurnaz Tilki", "🦊", unlockLevel = 1, priceCoins = 1250, isUnlocked = false, description = "Zeka ve taktik dehası"),
+    AvatarItem("eagle", "Göklerin Kartalı", "🦅", unlockLevel = 1, priceCoins = 1400, isUnlocked = false, description = "Yükseklerden gören keskin bakış"),
+    AvatarItem("lightning", "Yıldırım Tanrısı", "⚡", unlockLevel = 1, priceCoins = 1600, isUnlocked = false, description = "Işık hızında tepki gücü"),
+    AvatarItem("unicorn", "Kozmik Unicorn", "🦄", unlockLevel = 1, priceCoins = 1800, isUnlocked = false, description = "Nadir bulunan olağanüstü sezgi"),
+    AvatarItem("agent", "Siber Ajan", "🕶️", unlockLevel = 1, priceCoins = 2000, isUnlocked = false, description = "Matriks düzeyinde algı"),
+    AvatarItem("gladiator", "Altın Gladyatör", "🏆", unlockLevel = 1, priceCoins = 2500, isUnlocked = false, description = "Asla pes etmeyen arenanın fatihi")
+  )
+
+  private val savedUnlockedIds: MutableSet<String>
+  private val savedCoins: Int
+  private val savedSelectedAvatar: String
+  private val savedLastWheelDate: String
+
+  init {
+    savedCoins = prefs.getInt("user_coins", 548)
+    savedSelectedAvatar = prefs.getString("selected_avatar", "default") ?: "default"
+    savedLastWheelDate = prefs.getString("last_wheel_date", "") ?: ""
+    val defaultUnlocked = setOf("default")
+    savedUnlockedIds = (prefs.getStringSet("unlocked_avatars", defaultUnlocked) ?: defaultUnlocked).toMutableSet()
+    savedUnlockedIds.add("default")
+  }
+
   private val _userProfile = MutableStateFlow(
     UserProfile(
-      name = "Emir",
-      level = 7,
-      currentXp = 720,
-      maxXp = 1000,
-      coins = 548,
-      totalScore = 8920,
+      name = prefs.getString("user_name", "Emir") ?: "Emir",
+      level = prefs.getInt("user_level", 7),
+      currentXp = prefs.getInt("user_xp", 720),
+      maxXp = prefs.getInt("user_max_xp", 1000),
+      coins = savedCoins,
+      totalScore = prefs.getInt("user_total_score", 8920),
       nationalRank = 37,
-      currentStreak = 4,
-      maxStreak = 12,
-      selectedAvatarId = "default",
-      gamesWon = 27,
-      gamesPlayed = 31,
+      currentStreak = prefs.getInt("user_streak", 4),
+      maxStreak = prefs.getInt("user_max_streak", 12),
+      selectedAvatarId = savedSelectedAvatar,
+      gamesWon = prefs.getInt("user_games_won", 27),
+      gamesPlayed = prefs.getInt("user_games_played", 31),
       brainMemoryScore = 87,
       brainReflexScore = 92,
       brainAttentionScore = 74,
-      brainLogicScore = 89
+      brainLogicScore = 89,
+      hasSpunWheelToday = (savedLastWheelDate == getTodayDateString()),
+      lastWheelSpinDate = savedLastWheelDate
     )
   )
   val userProfile: StateFlow<UserProfile> = _userProfile.asStateFlow()
 
   private val _avatars = MutableStateFlow(
-    listOf(
-      AvatarItem("default", "Varsayılan", "🧑‍🚀", 1, true, "İlk maceracı"),
-      AvatarItem("ninja", "Ninja", "🥷", 3, true, "Sessiz ve yıldırım hızlı"),
-      AvatarItem("robot", "Robot", "🤖", 5, true, "Hesaplama uzmanı"),
-      AvatarItem("alien", "Uzaylı", "👽", 6, true, "Bilinmeyen boyutlardan"),
-      AvatarItem("cat", "Kedi", "🐱", 7, true, "Dokuz canlı refleks ustası"),
-      AvatarItem("fire", "Ateş", "🔥", 9, false, "Alev saçan seriler"),
-      AvatarItem("captain", "Kaptan", "👨‍✈️", 12, false, "Zirvenin lideri"),
-      AvatarItem("astronaut", "Astronot", "👨‍🚀", 15, false, "Kozmik sınırları aşan"),
-      AvatarItem("king", "Kral", "👑", 20, false, "Tüm liglerin efsanesi")
-    )
+    allCatalogAvatars.map { item ->
+      if (item.id == "default" || savedUnlockedIds.contains(item.id)) {
+        item.copy(isUnlocked = true)
+      } else {
+        item.copy(isUnlocked = false)
+      }
+    }
   )
   val avatars: StateFlow<List<AvatarItem>> = _avatars.asStateFlow()
 
@@ -136,9 +179,29 @@ class GameRepository(context: Context) {
     }
   }
 
+  private fun persistUserData() {
+    val u = _userProfile.value
+    prefs.edit()
+      .putInt("user_coins", u.coins)
+      .putString("selected_avatar", u.selectedAvatarId)
+      .putString("last_wheel_date", u.lastWheelSpinDate)
+      .putString("user_name", u.name)
+      .putInt("user_level", u.level)
+      .putInt("user_xp", u.currentXp)
+      .putInt("user_max_xp", u.maxXp)
+      .putInt("user_total_score", u.totalScore)
+      .putInt("user_streak", u.currentStreak)
+      .putInt("user_max_streak", u.maxStreak)
+      .putInt("user_games_won", u.gamesWon)
+      .putInt("user_games_played", u.gamesPlayed)
+      .putStringSet("unlocked_avatars", savedUnlockedIds)
+      .apply()
+  }
+
   fun updateUserName(newName: String) {
     if (newName.isNotBlank()) {
       _userProfile.update { it.copy(name = newName.trim()) }
+      persistUserData()
     }
   }
 
@@ -151,6 +214,7 @@ class GameRepository(context: Context) {
   }
 
   fun claimLuckyWheel(coins: Int, xp: Int) {
+    val today = getTodayDateString()
     _userProfile.update { current ->
       var newXp = current.currentXp + xp
       var newLevel = current.level
@@ -165,9 +229,11 @@ class GameRepository(context: Context) {
         currentXp = newXp,
         level = newLevel,
         maxXp = newMaxXp,
-        hasSpunWheelToday = true
+        hasSpunWheelToday = true,
+        lastWheelSpinDate = today
       )
     }
+    persistUserData()
   }
 
   fun addBonusReward(scoreBonus: Int, xpBonus: Int, coinsBonus: Int) {
@@ -191,6 +257,7 @@ class GameRepository(context: Context) {
         nationalRank = newRank
       )
     }
+    persistUserData()
   }
 
   fun grantExtraSpin() {
@@ -217,7 +284,8 @@ class GameRepository(context: Context) {
     accuracyPercent: Int,
     durationSeconds: Int,
     isRiskMode: Boolean,
-    isVictory: Boolean
+    isVictory: Boolean,
+    coinsEarned: Int = 0
   ) {
     scope.launch {
       gameDao.insertRecord(
@@ -238,7 +306,8 @@ class GameRepository(context: Context) {
         val newStreak = if (isVictory) current.currentStreak + 1 else 0
         val newMaxStreak = max(current.maxStreak, newStreak)
         val newTotalScore = current.totalScore + score
-        val newCoins = current.coins + if (isVictory) (if (isRiskMode) 35 else 15) else 3
+        val baseCoins = if (isVictory) (if (isRiskMode) 35 else 15) else 3
+        val newCoins = current.coins + baseCoins + coinsEarned
 
         var newXp = current.currentXp + xpEarned
         var newLevel = current.level
@@ -289,14 +358,8 @@ class GameRepository(context: Context) {
         }
       }
 
-      // Unlock avatars if level increased
-      _avatars.update { list ->
-        list.map { avatar ->
-          if (!avatar.isUnlocked && _userProfile.value.level >= avatar.unlockLevel) {
-            avatar.copy(isUnlocked = true)
-          } else avatar
-        }
-      }
+      // Persist user progress
+      persistUserData()
     }
   }
 
@@ -322,13 +385,35 @@ class GameRepository(context: Context) {
           coins = current.coins + 50
         )
       }
+      persistUserData()
     }
+  }
+
+  fun purchaseAvatar(avatarId: String): Boolean {
+    val avatar = _avatars.value.find { it.id == avatarId } ?: return false
+    if (avatar.isUnlocked) {
+      selectAvatar(avatarId)
+      return true
+    }
+    val user = _userProfile.value
+    if (user.coins >= avatar.priceCoins) {
+      val remaining = user.coins - avatar.priceCoins
+      savedUnlockedIds.add(avatarId)
+      _userProfile.update { it.copy(coins = remaining, selectedAvatarId = avatarId) }
+      _avatars.update { list ->
+        list.map { if (it.id == avatarId) it.copy(isUnlocked = true) else it }
+      }
+      persistUserData()
+      return true
+    }
+    return false
   }
 
   fun selectAvatar(avatarId: String) {
     val item = _avatars.value.find { it.id == avatarId }
     if (item?.isUnlocked == true) {
       _userProfile.update { it.copy(selectedAvatarId = avatarId) }
+      persistUserData()
     }
   }
 
