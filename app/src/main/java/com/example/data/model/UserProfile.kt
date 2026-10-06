@@ -75,6 +75,13 @@ data class UserProfile(
     }
 }
 
+enum class AvatarRarity(val label: String, val color: Color) {
+  COMMON("Yaygın", Color(0xFF64748B)),
+  RARE("Nadir", Color(0xFF2563EB)),
+  EPIC("Epik", Color(0xFF7C3AED)),
+  LEGENDARY("Efsanevi", Color(0xFFD97706))
+}
+
 data class AvatarItem(
   val id: String,
   val name: String,
@@ -82,7 +89,8 @@ data class AvatarItem(
   val unlockLevel: Int = 1,
   val priceCoins: Int = 0,
   val isUnlocked: Boolean = false,
-  val description: String = ""
+  val description: String = "",
+  val rarity: AvatarRarity = AvatarRarity.COMMON
 )
 
 data class DailyMission(

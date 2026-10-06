@@ -147,7 +147,7 @@ fun SettingsDialog(
           ) {
             Column {
               Text(
-                text = "10 SEC: Test Your Limits",
+                text = "Time Rush: Test Your Limits",
                 color = TextDark,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold

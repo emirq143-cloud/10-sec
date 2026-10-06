@@ -22,6 +22,6 @@ dependencyResolutionManagement {
   }
 }
 
-rootProject.name = "10 SEC"
+rootProject.name = "Time Rush"
 
 include(":app")

@@ -94,9 +94,9 @@ fun StartScreen(
         Spacer(modifier = Modifier.height(14.dp))
 
         Text(
-          text = "10 SEC",
+          text = "TIME RUSH",
           color = Color.White,
-          fontSize = 48.sp,
+          fontSize = 44.sp,
           fontWeight = FontWeight.Black,
           letterSpacing = 2.sp
         )

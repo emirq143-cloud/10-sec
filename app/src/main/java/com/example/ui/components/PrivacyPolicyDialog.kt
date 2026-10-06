@@ -114,7 +114,7 @@ fun PrivacyPolicyDialog(
         ) {
           PolicySection(
             title = "1. Genel Bilgilendirme",
-            body = "10 SEC mobil uygulaması (\"Uygulama\"), kullanıcıların zeka, refleks, dikkat ve hafıza becerilerini geliştirmelerine yönelik hazırlanmış bir bulmaca ve refleks oyunudur. Gizliliğinize büyük önem veriyoruz."
+            body = "Time Rush mobil uygulaması (\"Uygulama\"), kullanıcıların zeka, refleks, dikkat ve hafıza becerilerini geliştirmelerine yönelik hazırlanmış bir bulmaca ve refleks oyunudur. Gizliliğinize büyük önem veriyoruz."
           )
 
           PolicySection(

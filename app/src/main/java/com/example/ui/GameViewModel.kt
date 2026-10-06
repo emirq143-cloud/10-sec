@@ -420,11 +420,11 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     _activeSession.update { it?.copy(isTimerPaused = paused) }
   }
 
-  fun onRoundSuccess(scoreBonus: Int = 100, xpBonus: Int = 15, coinBonus: Int = 5) {
+  fun onRoundSuccess(scoreBonus: Int = 100, xpBonus: Int = 15, coinBonus: Int = 1) {
     val session = _activeSession.value ?: return
     if (session.isFinished) return
 
-    val multiplier = if (session.isRiskMode) 3 else 1
+    val multiplier = if (session.isRiskMode) 2 else 1
     val addedScore = scoreBonus * multiplier
     val addedXp = xpBonus * multiplier
     val addedCoins = coinBonus * multiplier
@@ -445,7 +445,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
   }
 
   fun onRoundSuccess(scoreBonus: Int, timeBonus: Float) {
-    onRoundSuccess(scoreBonus = scoreBonus, xpBonus = 15, coinBonus = 5)
+    onRoundSuccess(scoreBonus = scoreBonus, xpBonus = 15, coinBonus = 1)
   }
 
   fun onRoundMistake(reason: String = "Yanlış cevap!") {

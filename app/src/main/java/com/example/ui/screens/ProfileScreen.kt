@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.CircleShape
@@ -320,10 +321,12 @@ fun ProfileScreen(
             items(filteredAvatars.size) { index ->
               val avatar = filteredAvatars[index]
               val isSelected = avatar.id == userProfile.selectedAvatarId
+              val progress = if (avatar.priceCoins > 0) (userProfile.coins.toFloat() / avatar.priceCoins).coerceIn(0f, 1f) else 1f
 
               Box(
                 modifier = Modifier
-                  .size(102.dp)
+                  .width(114.dp)
+                  .height(132.dp)
                   .shadow(
                     elevation = if (isSelected) 10.dp else 4.dp,
                     shape = RoundedCornerShape(20.dp),
@@ -343,50 +346,87 @@ fun ProfileScreen(
                       avatarToPurchase = avatar
                     }
                   }
-                  .padding(6.dp),
+                  .padding(8.dp),
                 contentAlignment = Alignment.Center
               ) {
                 Column(
                   horizontalAlignment = Alignment.CenterHorizontally,
-                  verticalArrangement = Arrangement.Center
+                  verticalArrangement = Arrangement.SpaceBetween,
+                  modifier = Modifier.fillMaxSize()
                 ) {
-                  Text(text = avatar.emoji, fontSize = 28.sp)
-                  Spacer(modifier = Modifier.height(2.dp))
+                  // Rarity Tag
+                  Box(
+                    modifier = Modifier
+                      .clip(RoundedCornerShape(6.dp))
+                      .background(avatar.rarity.color.copy(alpha = 0.15f))
+                      .padding(horizontal = 6.dp, vertical = 2.dp)
+                  ) {
+                    Text(
+                      text = avatar.rarity.label,
+                      color = avatar.rarity.color,
+                      fontSize = 9.sp,
+                      fontWeight = FontWeight.Black
+                    )
+                  }
+
+                  Text(text = avatar.emoji, fontSize = 32.sp)
+
                   Text(
                     text = avatar.name,
                     color = if (avatar.isUnlocked) TextDark else TextDarkMuted,
                     fontSize = 11.sp,
-                    fontWeight = FontWeight.ExtraBold
+                    fontWeight = FontWeight.ExtraBold,
+                    maxLines = 1
                   )
-
-                  Spacer(modifier = Modifier.height(2.dp))
 
                   if (isSelected) {
                     Text(
                       text = "AKTİF",
                       color = Color(0xFFB45309),
-                      fontSize = 9.sp,
+                      fontSize = 10.sp,
                       fontWeight = FontWeight.Black
                     )
                   } else if (avatar.isUnlocked) {
                     Text(
                       text = "SEÇ ➔",
                       color = BluePrimary,
-                      fontSize = 9.sp,
+                      fontSize = 10.sp,
                       fontWeight = FontWeight.Bold
                     )
                   } else {
-                    Row(
-                      verticalAlignment = Alignment.CenterVertically,
-                      horizontalArrangement = Arrangement.spacedBy(2.dp)
+                    Column(
+                      horizontalAlignment = Alignment.CenterHorizontally,
+                      verticalArrangement = Arrangement.spacedBy(2.dp),
+                      modifier = Modifier.fillMaxWidth()
                     ) {
-                      Text(text = "🪙", fontSize = 9.sp)
-                      Text(
-                        text = "${avatar.priceCoins}",
-                        color = Color(0xFFB45309),
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.ExtraBold
-                      )
+                      Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(2.dp)
+                      ) {
+                        Text(text = "🪙", fontSize = 10.sp)
+                        Text(
+                          text = "${avatar.priceCoins}",
+                          color = Color(0xFFB45309),
+                          fontSize = 10.sp,
+                          fontWeight = FontWeight.ExtraBold
+                        )
+                      }
+                      // Progress Bar towards unlocking
+                      Box(
+                        modifier = Modifier
+                          .fillMaxWidth()
+                          .height(4.dp)
+                          .clip(RoundedCornerShape(2.dp))
+                          .background(Color(0xFFE2E8F0))
+                      ) {
+                        Box(
+                          modifier = Modifier
+                            .fillMaxWidth(fraction = progress)
+                            .height(4.dp)
+                            .clip(RoundedCornerShape(2.dp))
+                            .background(if (progress >= 1f) VibrantGreen else NeonGold)
+                        )
+                      }
                     }
                   }
                 }
@@ -420,7 +460,7 @@ fun ProfileScreen(
                       imageVector = Icons.Default.Lock,
                       contentDescription = null,
                       tint = TextDarkMuted,
-                      modifier = Modifier.size(12.dp)
+                      modifier = Modifier.size(11.dp)
                     )
                   }
                 }
@@ -482,7 +522,20 @@ fun AvatarPurchaseModal(
           Text(text = avatar.emoji, fontSize = 42.sp)
         }
 
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+          Box(
+            modifier = Modifier
+              .clip(RoundedCornerShape(8.dp))
+              .background(avatar.rarity.color.copy(alpha = 0.15f))
+              .padding(horizontal = 8.dp, vertical = 3.dp)
+          ) {
+            Text(
+              text = avatar.rarity.label,
+              color = avatar.rarity.color,
+              fontSize = 11.sp,
+              fontWeight = FontWeight.Black
+            )
+          }
           Text(
             text = avatar.name,
             color = TextDark,

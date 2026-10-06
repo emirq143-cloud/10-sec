@@ -216,7 +216,7 @@ fun AdSimulationDialog(
               Text(text = "🎮", fontSize = 28.sp)
             }
             Text(
-              text = "10 SEC: Zeka & Refleks",
+              text = "Time Rush: Zeka & Hız",
               color = Color.White,
               fontSize = 18.sp,
               fontWeight = FontWeight.Black

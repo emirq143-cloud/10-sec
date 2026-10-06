@@ -5,6 +5,7 @@ import android.content.SharedPreferences
 import com.example.data.local.AppDatabase
 import com.example.data.local.GameRecordEntity
 import com.example.data.model.AvatarItem
+import com.example.data.model.AvatarRarity
 import com.example.data.model.DailyMission
 import com.example.data.model.GameCategory
 import com.example.data.model.GameType
@@ -83,24 +84,24 @@ class GameRepository(context: Context) {
   )
 
   private val allCatalogAvatars = listOf(
-    AvatarItem("default", "Astronot", "🧑‍🚀", unlockLevel = 1, priceCoins = 0, isUnlocked = true, description = "İlk cesur maceracı (Ücretsiz)"),
-    AvatarItem("ninja", "Gölge Ninja", "🥷", unlockLevel = 1, priceCoins = 150, isUnlocked = false, description = "Sessiz ve yıldırım refleks ustası"),
-    AvatarItem("cat", "Uğurlu Kedi", "🐱", unlockLevel = 1, priceCoins = 200, isUnlocked = false, description = "Dokuz canlı refleks uzmanı"),
-    AvatarItem("robot", "Siber Robot", "🤖", unlockLevel = 1, priceCoins = 250, isUnlocked = false, description = "Hızlı işlemci ve hesaplama uzmanı"),
-    AvatarItem("alien", "Uzaylı Gezgin", "👽", unlockLevel = 1, priceCoins = 300, isUnlocked = false, description = "Bilinmeyen boyutların kaşifi"),
-    AvatarItem("detective", "Dedektif", "🕵️‍♂️", unlockLevel = 1, priceCoins = 350, isUnlocked = false, description = "Farkları milisaniyede sezen göz"),
-    AvatarItem("lion", "Kral Aslan", "🦁", unlockLevel = 1, priceCoins = 400, isUnlocked = false, description = "Reflekslerin ve cesaretin kralı"),
-    AvatarItem("wizard", "Zihin Büyücüsü", "🧙‍♂️", unlockLevel = 1, priceCoins = 500, isUnlocked = false, description = "Derin mantık ve hafıza büyücüsü"),
-    AvatarItem("dragon", "Ateş Ejderi", "🐲", unlockLevel = 1, priceCoins = 650, isUnlocked = false, description = "Alev saçan seri galibiyetler"),
-    AvatarItem("crown_king", "Altın Kral", "👑", unlockLevel = 1, priceCoins = 800, isUnlocked = false, description = "Tüm liglerin zirvesindeki efsane"),
-    AvatarItem("diamond_hero", "Elmas Şampiyon", "💎", unlockLevel = 1, priceCoins = 950, isUnlocked = false, description = "Saf odaklanma ve konsantrasyon"),
-    AvatarItem("samurai", "Neon Samuray", "⚔️", unlockLevel = 1, priceCoins = 1100, isUnlocked = false, description = "Kusursuz keskinlikte zihin"),
-    AvatarItem("fox", "Kurnaz Tilki", "🦊", unlockLevel = 1, priceCoins = 1250, isUnlocked = false, description = "Zeka ve taktik dehası"),
-    AvatarItem("eagle", "Göklerin Kartalı", "🦅", unlockLevel = 1, priceCoins = 1400, isUnlocked = false, description = "Yükseklerden gören keskin bakış"),
-    AvatarItem("lightning", "Yıldırım Tanrısı", "⚡", unlockLevel = 1, priceCoins = 1600, isUnlocked = false, description = "Işık hızında tepki gücü"),
-    AvatarItem("unicorn", "Kozmik Unicorn", "🦄", unlockLevel = 1, priceCoins = 1800, isUnlocked = false, description = "Nadir bulunan olağanüstü sezgi"),
-    AvatarItem("agent", "Siber Ajan", "🕶️", unlockLevel = 1, priceCoins = 2000, isUnlocked = false, description = "Matriks düzeyinde algı"),
-    AvatarItem("gladiator", "Altın Gladyatör", "🏆", unlockLevel = 1, priceCoins = 2500, isUnlocked = false, description = "Asla pes etmeyen arenanın fatihi")
+    AvatarItem("default", "Astronot", "🧑‍🚀", unlockLevel = 1, priceCoins = 0, isUnlocked = true, description = "İlk cesur maceracı (Ücretsiz)", rarity = AvatarRarity.COMMON),
+    AvatarItem("ninja", "Gölge Ninja", "🥷", unlockLevel = 1, priceCoins = 350, isUnlocked = false, description = "Sessiz ve yıldırım refleks ustası", rarity = AvatarRarity.COMMON),
+    AvatarItem("cat", "Uğurlu Kedi", "🐱", unlockLevel = 1, priceCoins = 500, isUnlocked = false, description = "Dokuz canlı refleks uzmanı", rarity = AvatarRarity.COMMON),
+    AvatarItem("robot", "Siber Robot", "🤖", unlockLevel = 1, priceCoins = 750, isUnlocked = false, description = "Hızlı işlemci ve hesaplama uzmanı", rarity = AvatarRarity.COMMON),
+    AvatarItem("alien", "Uzaylı Gezgin", "👽", unlockLevel = 1, priceCoins = 1000, isUnlocked = false, description = "Bilinmeyen boyutların kaşifi", rarity = AvatarRarity.RARE),
+    AvatarItem("detective", "Dedektif", "🕵️‍♂️", unlockLevel = 1, priceCoins = 1350, isUnlocked = false, description = "Farkları milisaniyede sezen göz", rarity = AvatarRarity.RARE),
+    AvatarItem("lion", "Kral Aslan", "🦁", unlockLevel = 1, priceCoins = 1800, isUnlocked = false, description = "Reflekslerin ve cesaretin kralı", rarity = AvatarRarity.RARE),
+    AvatarItem("fox", "Kurnaz Tilki", "🦊", unlockLevel = 1, priceCoins = 2200, isUnlocked = false, description = "Zeka ve taktik dehası", rarity = AvatarRarity.RARE),
+    AvatarItem("wizard", "Zihin Büyücüsü", "🧙‍♂️", unlockLevel = 1, priceCoins = 2800, isUnlocked = false, description = "Derin mantık ve hafıza büyücüsü", rarity = AvatarRarity.EPIC),
+    AvatarItem("dragon", "Ateş Ejderi", "🐲", unlockLevel = 1, priceCoins = 3500, isUnlocked = false, description = "Alev saçan seri galibiyetler", rarity = AvatarRarity.EPIC),
+    AvatarItem("samurai", "Neon Samuray", "⚔️", unlockLevel = 1, priceCoins = 4200, isUnlocked = false, description = "Kusursuz keskinlikte zihin", rarity = AvatarRarity.EPIC),
+    AvatarItem("eagle", "Göklerin Kartalı", "🦅", unlockLevel = 1, priceCoins = 4900, isUnlocked = false, description = "Yükseklerden gören keskin bakış", rarity = AvatarRarity.EPIC),
+    AvatarItem("crown_king", "Altın Kral", "👑", unlockLevel = 1, priceCoins = 5800, isUnlocked = false, description = "Tüm liglerin zirvesindeki efsane", rarity = AvatarRarity.LEGENDARY),
+    AvatarItem("diamond_hero", "Elmas Şampiyon", "💎", unlockLevel = 1, priceCoins = 6800, isUnlocked = false, description = "Saf odaklanma ve konsantrasyon", rarity = AvatarRarity.LEGENDARY),
+    AvatarItem("lightning", "Yıldırım Tanrısı", "⚡", unlockLevel = 1, priceCoins = 7900, isUnlocked = false, description = "Işık hızında tepki gücü", rarity = AvatarRarity.LEGENDARY),
+    AvatarItem("unicorn", "Kozmik Unicorn", "🦄", unlockLevel = 1, priceCoins = 9200, isUnlocked = false, description = "Nadir bulunan olağanüstü sezgi", rarity = AvatarRarity.LEGENDARY),
+    AvatarItem("agent", "Siber Ajan", "🕶️", unlockLevel = 1, priceCoins = 10500, isUnlocked = false, description = "Matriks düzeyinde algı", rarity = AvatarRarity.LEGENDARY),
+    AvatarItem("gladiator", "Altın Gladyatör", "🏆", unlockLevel = 1, priceCoins = 12000, isUnlocked = false, description = "Asla pes etmeyen arenanın fatihi", rarity = AvatarRarity.LEGENDARY)
   )
 
   private val savedUnlockedIds: MutableSet<String>
@@ -109,7 +110,7 @@ class GameRepository(context: Context) {
   private val savedLastWheelDate: String
 
   init {
-    savedCoins = prefs.getInt("user_coins", 548)
+    savedCoins = prefs.getInt("user_coins", 75)
     savedSelectedAvatar = prefs.getString("selected_avatar", "default") ?: "default"
     savedLastWheelDate = prefs.getString("last_wheel_date", "") ?: ""
     val defaultUnlocked = setOf("default")
@@ -307,7 +308,7 @@ class GameRepository(context: Context) {
         val newStreak = if (isVictory) current.currentStreak + 1 else 0
         val newMaxStreak = max(current.maxStreak, newStreak)
         val newTotalScore = current.totalScore + score
-        val baseCoins = if (isVictory) (if (isRiskMode) 35 else 15) else 3
+        val baseCoins = if (isVictory) (if (isRiskMode) 6 else 3) else 1
         val newCoins = current.coins + baseCoins + coinsEarned
 
         var newXp = current.currentXp + xpEarned
