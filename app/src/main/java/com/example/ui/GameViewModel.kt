@@ -8,19 +8,29 @@ import android.os.Vibrator
 import android.os.VibratorManager
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.data.auth.GoogleAuthManager
 import com.example.data.model.AvatarItem
 import com.example.data.model.DailyMission
+import com.example.data.model.FirestoreLeaderboardEntry
 import com.example.data.model.GameType
 import com.example.data.model.LeaderboardEntry
+import com.example.data.model.League
 import com.example.data.model.UserProfile
 import com.example.data.repository.GameRepository
+import com.example.data.repository.LeaderboardRepository
 import com.example.ui.components.AdRewardType
 import com.example.ui.util.SoundHapticManager
+import com.google.firebase.auth.FirebaseUser
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlin.math.max
@@ -57,6 +67,41 @@ data class GamePlaySession(
 
 class GameViewModel(application: Application) : AndroidViewModel(application) {
   private val repository = GameRepository(application)
+  private val leaderboardRepository = LeaderboardRepository(application)
+  val authManager = GoogleAuthManager()
+
+  val currentUser: StateFlow<FirebaseUser?> = authManager.authStateFlow
+    .stateIn(viewModelScope, SharingStarted.Eagerly, authManager.currentUser)
+
+  @OptIn(ExperimentalCoroutinesApi::class)
+  val cloudLeaderboard: StateFlow<List<FirestoreLeaderboardEntry>> = currentUser
+    .flatMapLatest { user ->
+      if (user != null) {
+        leaderboardRepository.observeTopLeaderboard(100)
+      } else {
+        flowOf(emptyList())
+      }
+    }
+    .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+  private val prefs = application.getSharedPreferences("user_settings_prefs", Context.MODE_PRIVATE)
+  private val _selectedCity = MutableStateFlow(prefs.getString("selected_city", "İstanbul") ?: "İstanbul")
+  val selectedCity: StateFlow<String> = _selectedCity.asStateFlow()
+
+  fun setSelectedCity(city: String) {
+    _selectedCity.value = city
+    prefs.edit().putString("selected_city", city).apply()
+  }
+
+  private val _isSubmittingScore = MutableStateFlow(false)
+  val isSubmittingScore: StateFlow<Boolean> = _isSubmittingScore.asStateFlow()
+
+  private val _syncStatusMessage = MutableStateFlow<String?>(null)
+  val syncStatusMessage: StateFlow<String?> = _syncStatusMessage.asStateFlow()
+
+  fun clearSyncStatusMessage() {
+    _syncStatusMessage.value = null
+  }
 
   val userProfile: StateFlow<UserProfile> = repository.userProfile
   val avatars: StateFlow<List<AvatarItem>> = repository.avatars
@@ -189,8 +234,126 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     repository.updateUserName(name)
   }
 
-  fun getLeaderboard(): List<LeaderboardEntry> {
-    return repository.getLeaderboard(_leaderboardTab.value)
+  fun signInWithGoogle(context: Context, onResult: (Boolean, String?) -> Unit) {
+    viewModelScope.launch {
+      val result = authManager.signInWithGoogle(context)
+      if (result.isSuccess) {
+        val fbUser = result.getOrNull()
+        if (fbUser != null && !fbUser.displayName.isNullOrBlank()) {
+          repository.updateUserName(fbUser.displayName!!)
+        }
+        submitScoreToCloud()
+        onResult(true, null)
+      } else {
+        val msg = result.exceptionOrNull()?.localizedMessage ?: "Google ile giriş yapılamadı"
+        onResult(false, msg)
+      }
+    }
+  }
+
+  fun signOut(context: Context) {
+    viewModelScope.launch {
+      authManager.signOut(context)
+      _syncStatusMessage.value = "Google oturumu kapatıldı."
+    }
+  }
+
+  fun submitScoreToCloud(onComplete: ((Boolean, String) -> Unit)? = null) {
+    val user = authManager.currentUser
+    if (user == null) {
+      _syncStatusMessage.value = "Lütfen önce Google ile giriş yapın."
+      onComplete?.invoke(false, "Giriş yapılmadı")
+      return
+    }
+
+    val profile = userProfile.value
+    val currentAvatar = avatars.value.find { it.id == profile.selectedAvatarId }
+    val avatarEmoji = currentAvatar?.emoji ?: "🧑‍🚀"
+    val avatarId = profile.selectedAvatarId
+
+    val brainScore = profile.overallBrainScore * 10 + profile.totalScore
+
+    _isSubmittingScore.value = true
+    viewModelScope.launch {
+      val result = leaderboardRepository.submitScore(
+        userName = user.displayName?.takeIf { it.isNotBlank() } ?: profile.name,
+        avatarId = avatarId,
+        avatarEmoji = avatarEmoji,
+        brainScore = brainScore,
+        level = profile.level,
+        city = _selectedCity.value
+      )
+      _isSubmittingScore.value = false
+      if (result.isSuccess) {
+        _syncStatusMessage.value = "Skorun Türkiye liderlik tablosuna kaydedildi! 🚀"
+        SoundHapticManager.playFanfare(profile.soundEnabled)
+        onComplete?.invoke(true, "Başarılı")
+      } else {
+        val err = result.exceptionOrNull()?.localizedMessage ?: "Bağlantı hatası"
+        _syncStatusMessage.value = "Hata: $err"
+        onComplete?.invoke(false, err)
+      }
+    }
+  }
+
+  fun getLeaderboard(cityFilter: String? = null): List<LeaderboardEntry> {
+    val user = userProfile.value
+    val currentFbUser = currentUser.value
+    val currentUid = currentFbUser?.uid
+    val cloudEntries = cloudLeaderboard.value
+
+    if (currentFbUser != null && cloudEntries.isNotEmpty()) {
+      val filteredCloud = if (!cityFilter.isNullOrBlank() && cityFilter != "Tüm Türkiye") {
+        cloudEntries.filter { it.city.equals(cityFilter, ignoreCase = true) }
+      } else {
+        cloudEntries
+      }
+
+      val sorted = filteredCloud.sortedByDescending { it.brainScore }
+      var foundUser = false
+      val mapped = sorted.mapIndexed { index, entry ->
+        val isCurrent = entry.userId == currentUid
+        if (isCurrent) foundUser = true
+        LeaderboardEntry(
+          rank = index + 1,
+          name = entry.userName,
+          score = entry.brainScore,
+          avatarEmoji = entry.avatarEmoji,
+          isUser = isCurrent,
+          country = "TR",
+          city = entry.city,
+          userId = entry.userId,
+          league = League.fromScore(entry.brainScore)
+        )
+      }.toMutableList()
+
+      if (!foundUser) {
+        val userAvatarEmoji = avatars.value.find { it.id == user.selectedAvatarId }?.emoji ?: "🧑‍🚀"
+        val userScore = user.overallBrainScore * 10 + user.totalScore
+        mapped.add(
+          LeaderboardEntry(
+            rank = mapped.size + 1,
+            name = "${user.name} (Sen)",
+            score = userScore,
+            avatarEmoji = userAvatarEmoji,
+            isUser = true,
+            country = "TR",
+            city = _selectedCity.value,
+            userId = currentUid ?: "",
+            league = League.fromScore(userScore)
+          )
+        )
+      }
+
+      val reSorted = mapped.sortedByDescending { it.score }
+      return reSorted.mapIndexed { index, item -> item.copy(rank = index + 1) }
+    }
+
+    val base = repository.getLeaderboard(_leaderboardTab.value)
+    if (!cityFilter.isNullOrBlank() && cityFilter != "Tüm Türkiye") {
+      return base.filter { it.city.equals(cityFilter, ignoreCase = true) || it.isUser }
+    }
+    return base
   }
 
   fun requestStartGame(gameType: GameType) {

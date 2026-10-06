@@ -103,5 +103,7 @@ data class LeaderboardEntry(
   val avatarEmoji: String,
   val isUser: Boolean = false,
   val country: String = "TR",
-  val league: League = League.BRONZE
+  val league: League = League.BRONZE,
+  val city: String = "İstanbul",
+  val userId: String = ""
 )

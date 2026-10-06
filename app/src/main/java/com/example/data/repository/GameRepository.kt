@@ -31,7 +31,8 @@ data class Competitor(
   val baseScore: Int,
   val avatarEmoji: String,
   val country: String,
-  val league: League
+  val league: League,
+  val city: String = "İstanbul"
 )
 
 class GameRepository(context: Context) {
@@ -47,19 +48,19 @@ class GameRepository(context: Context) {
 
   // Seed pool of active Turkey & Global players
   private val competitorsTurkey = listOf(
-    Competitor("p1", "BerkAy", 15842, "⚡", "TR", League.DIAMOND),
-    Competitor("p2", "Zehra", 14920, "🔥", "TR", League.DIAMOND),
-    Competitor("p3", "Yusuf", 13765, "🦁", "TR", League.DIAMOND),
-    Competitor("p4", "Can_07", 12400, "🏎️", "TR", League.DIAMOND),
-    Competitor("p5", "Elif_K", 11850, "🎯", "TR", League.GOLD),
-    Competitor("p6", "Baris", 10920, "🐺", "TR", League.GOLD),
-    Competitor("p7", "Mert", 9400, "🧑‍💻", "TR", League.GOLD),
-    Competitor("p8", "Ada", 8660, "🦊", "TR", League.GOLD),
-    Competitor("p9", "Deniz", 8540, "🌊", "TR", League.GOLD),
-    Competitor("p10", "Kaan", 8310, "🦅", "TR", League.GOLD),
-    Competitor("p11", "Burak", 7600, "🎮", "TR", League.GOLD),
-    Competitor("p12", "Selin", 6850, "🌸", "TR", League.SILVER),
-    Competitor("p13", "Emre_TR", 5900, "🚀", "TR", League.SILVER)
+    Competitor("p1", "BerkAy", 15842, "⚡", "TR", League.DIAMOND, "İstanbul"),
+    Competitor("p2", "Zehra", 14920, "🔥", "TR", League.DIAMOND, "Ankara"),
+    Competitor("p3", "Yusuf", 13765, "🦁", "TR", League.DIAMOND, "İzmir"),
+    Competitor("p4", "Can_07", 12400, "🏎️", "TR", League.DIAMOND, "Antalya"),
+    Competitor("p5", "Elif_K", 11850, "🎯", "TR", League.GOLD, "Bursa"),
+    Competitor("p6", "Baris", 10920, "🐺", "TR", League.GOLD, "Eskişehir"),
+    Competitor("p7", "Mert", 9400, "🧑‍💻", "TR", League.GOLD, "Adana"),
+    Competitor("p8", "Ada", 8660, "🦊", "TR", League.GOLD, "Trabzon"),
+    Competitor("p9", "Deniz", 8540, "🌊", "TR", League.GOLD, "Muğla"),
+    Competitor("p10", "Kaan", 8310, "🦅", "TR", League.GOLD, "Konya"),
+    Competitor("p11", "Burak", 7600, "🎮", "TR", League.GOLD, "Kayseri"),
+    Competitor("p12", "Selin", 6850, "🌸", "TR", League.SILVER, "Gaziantep"),
+    Competitor("p13", "Emre_TR", 5900, "🚀", "TR", League.SILVER, "Samsun")
   )
 
   private val competitorsGlobal = listOf(
@@ -436,7 +437,8 @@ class GameRepository(context: Context) {
         avatarEmoji = it.avatarEmoji,
         isUser = false,
         country = it.country,
-        league = it.league
+        league = it.league,
+        city = it.city
       )
     }.toMutableList()
 
@@ -449,7 +451,8 @@ class GameRepository(context: Context) {
         avatarEmoji = userAvatarEmoji,
         isUser = true,
         country = "TR",
-        league = user.league
+        league = user.league,
+        city = "İstanbul"
       )
     )
 

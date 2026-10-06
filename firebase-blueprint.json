@@ -1,0 +1,51 @@
+{
+  "entities": {
+    "LeaderboardEntry": {
+      "title": "LeaderboardEntry",
+      "description": "Oyuncuların beyin skorları ve Türkiye geneli sıralama bilgisi",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Kullanıcının Firebase Auth benzersiz kimliği"
+        },
+        "userName": {
+          "type": "string",
+          "description": "Kullanıcının görünen adı"
+        },
+        "avatarId": {
+          "type": "string",
+          "description": "Seçili avatar ID'si"
+        },
+        "avatarEmoji": {
+          "type": "string",
+          "description": "Seçili avatar emoji simgesi"
+        },
+        "brainScore": {
+          "type": "integer",
+          "description": "Oyuncunun toplam beyin skoru"
+        },
+        "level": {
+          "type": "integer",
+          "description": "Oyuncu seviyesi"
+        },
+        "city": {
+          "type": "string",
+          "description": "Oyuncunun Türkiye şehri (İstanbul, Ankara, İzmir vb.)"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Skorun en son güncellendiği zaman damgası"
+        }
+      },
+      "required": ["userId", "userName", "avatarId", "avatarEmoji", "brainScore", "level", "city", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/leaderboard/{userId}": {
+      "schema": "LeaderboardEntry",
+      "description": "Her oyuncunun kendi güncel beyin skoru ve liderlik tablosu kaydı"
+    }
+  }
+}

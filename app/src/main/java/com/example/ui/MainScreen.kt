@@ -77,6 +77,11 @@ fun MainScreen(viewModel: GameViewModel) {
   val showPrivacyPolicy by viewModel.showPrivacyPolicy.collectAsStateWithLifecycle()
   val showAdSimulation by viewModel.showAdSimulation.collectAsStateWithLifecycle()
   val isAdFree by viewModel.isAdFree.collectAsStateWithLifecycle()
+  val currentUser by viewModel.currentUser.collectAsStateWithLifecycle()
+  val selectedCity by viewModel.selectedCity.collectAsStateWithLifecycle()
+  val isSubmittingScore by viewModel.isSubmittingScore.collectAsStateWithLifecycle()
+  val syncStatusMessage by viewModel.syncStatusMessage.collectAsStateWithLifecycle()
+  val cloudLeaderboard by viewModel.cloudLeaderboard.collectAsStateWithLifecycle()
 
   // Handle Android back button
   BackHandler(enabled = screenState != ScreenState.START && screenState != ScreenState.HOME) {
@@ -174,10 +179,19 @@ fun MainScreen(viewModel: GameViewModel) {
           )
           ScreenState.LEADERBOARD -> LeaderboardScreen(
             userProfile = userProfile,
-            entries = viewModel.getLeaderboard(),
+            entries = viewModel.getLeaderboard(selectedCity),
             selectedTab = leaderboardTab,
             onSelectTab = { viewModel.setLeaderboardTab(it) },
-            onUpdateName = { viewModel.setUserName(it) }
+            onUpdateName = { viewModel.setUserName(it) },
+            currentUser = currentUser,
+            selectedCity = selectedCity,
+            onSelectCity = { viewModel.setSelectedCity(it) },
+            isSubmittingScore = isSubmittingScore,
+            syncStatusMessage = syncStatusMessage,
+            onDismissSyncMessage = { viewModel.clearSyncStatusMessage() },
+            onSignInWithGoogle = { context, onResult -> viewModel.signInWithGoogle(context, onResult) },
+            onSignOut = { context -> viewModel.signOut(context) },
+            onSubmitScoreToCloud = { onComplete -> viewModel.submitScoreToCloud(onComplete) }
           )
           ScreenState.PROFILE -> ProfileScreen(
             userProfile = userProfile,

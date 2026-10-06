@@ -1,0 +1,36 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function isValidLeaderboardEntry(data) {
+      return data.keys().hasAll(['userId', 'userName', 'avatarId', 'avatarEmoji', 'brainScore', 'level', 'city', 'updatedAt']) &&
+        data.keys().hasOnly(['userId', 'userName', 'avatarId', 'avatarEmoji', 'brainScore', 'level', 'city', 'updatedAt']) &&
+        data.userId is string && data.userId == request.auth.uid &&
+        data.userName is string && data.userName.size() >= 1 && data.userName.size() <= 30 &&
+        data.avatarId is string && data.avatarId.size() >= 1 && data.avatarId.size() <= 30 &&
+        data.avatarEmoji is string && data.avatarEmoji.size() >= 1 && data.avatarEmoji.size() <= 10 &&
+        data.brainScore is int && data.brainScore >= 0 && data.brainScore <= 50000 &&
+        data.level is int && data.level >= 1 && data.level <= 100 &&
+        data.city is string && data.city.size() >= 1 && data.city.size() <= 30 &&
+        data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    match /leaderboard/{userId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.auth.uid == userId && isValidLeaderboardEntry(incoming());
+      allow update: if isSignedIn() && request.auth.uid == userId && isValidLeaderboardEntry(incoming());
+      allow delete: if isSignedIn() && request.auth.uid == userId;
+    }
+  }
+}
