@@ -198,9 +198,13 @@ fun HomeScreen(
           Box(
             modifier = Modifier
               .weight(1f)
-              .shadow(8.dp, RoundedCornerShape(20.dp), spotColor = NeonGold.copy(alpha = 0.4f))
+              .shadow(10.dp, RoundedCornerShape(20.dp), spotColor = NeonGold.copy(alpha = 0.5f))
               .clip(RoundedCornerShape(20.dp))
-              .background(CardFrosted)
+              .background(
+                Brush.linearGradient(
+                  listOf(Color(0xFFFFFBEB), Color(0xFFFEF3C7))
+                )
+              )
               .border(2.dp, NeonGold, RoundedCornerShape(20.dp))
               .clickable { onOpenLuckyWheel() }
               .padding(14.dp)
@@ -211,13 +215,30 @@ fun HomeScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 modifier = Modifier.fillMaxWidth()
               ) {
-                Text(text = "🎰 Şans Çarkı", color = TextDark, fontSize = 14.sp, fontWeight = FontWeight.ExtraBold)
-                Text(text = "🎁", fontSize = 18.sp)
+                Text(text = "🎯 Günlük Çark", color = Color(0xFF78350F), fontSize = 14.sp, fontWeight = FontWeight.ExtraBold)
+                Box(
+                  modifier = Modifier
+                    .clip(CircleShape)
+                    .background(if (!userProfile.hasSpunWheelToday) Color(0xFFDC2626) else Color(0xFF16A34A))
+                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                ) {
+                  Text(
+                    text = if (!userProfile.hasSpunWheelToday) "HAZIR" else "✓",
+                    color = Color.White,
+                    fontSize = 9.sp,
+                    fontWeight = FontWeight.Black
+                  )
+                }
               }
-              Text(text = "Günde 1 kez bedava!", color = TextDarkSecondary, fontSize = 11.sp)
+              Text(
+                text = if (!userProfile.hasSpunWheelToday) "Hediye altın & XP seni bekliyor!" else "Bugün çevrildi (Reklamla +1)",
+                color = Color(0xFF92400E),
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Medium
+              )
               Spacer(modifier = Modifier.height(2.dp))
               Text(
-                text = "ÇEVİR ➔",
+                text = if (!userProfile.hasSpunWheelToday) "ŞİMDİ ÇEVİR ➔" else "DETAY ➔",
                 color = Color(0xFFB45309),
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Black

@@ -114,37 +114,42 @@ fun PrivacyPolicyDialog(
         ) {
           PolicySection(
             title = "1. Genel Bilgilendirme",
-            body = "Time Rush mobil uygulaması (\"Uygulama\"), kullanıcıların zeka, refleks, dikkat ve hafıza becerilerini geliştirmelerine yönelik hazırlanmış bir bulmaca ve refleks oyunudur. Gizliliğinize büyük önem veriyoruz."
+            body = "Time Rush mobil uygulaması (\"Uygulama\"), kullanıcıların zeka, refleks, dikkat ve hafıza becerilerini geliştirmelerine yönelik hazırlanmış bir bulmaca ve refleks oyunudur. Gizliliğinize büyük önem veriyoruz. Bu politika, Google Play Store Geliştirici Politikaları ve KVKK/GDPR/COPPA gereksinimlerine tam uyumlu olarak hazırlanmıştır."
           )
 
           PolicySection(
             title = "2. Toplanan Veriler ve Kullanımı",
-            body = "• Oyun İçi Veriler: Skorlarınız, tamamladığınız görevler, reaksiyon süresi analizleriniz ve seçtiğiniz avatarlar cihazınızın yerel hafızasında (Room Database) saklanır.\n• Liderlik Tablosu: Türkiye ve dünya sıralamalarında yalnızca belirlediğiniz takma adınız (nickname), puanınız ve liginiz görüntülenir. Gerçek adınız veya kimlik bilgileriniz talep edilmez."
+            body = "• Oyun İçi Veriler: Skorlarınız, tamamladığınız görevler, reaksiyon süresi analizleriniz ve seçtiğiniz avatarlar cihazınızın yerel hafızasında (Room Database) saklanır.\n• Google ile Giriş ve Kimlik Doğrulama: Google ile Giriş Yap (Google Sign-In / Credential Manager) seçeneğini kullandığınızda, yalnızca Google kullanıcı ID'niz (UID), adınız ve profil resminiz Firebase Authentication altyapısında güvenli oturum açmak için kullanılır. Şifreniz asla tarafımızca görülmez veya saklanmaz.\n• Liderlik Tablosu (Firebase Firestore): Türkiye ve şehir bazlı sıralamalarda yalnızca kullanıcı adınız, beyin skorunuz, liginiz, seçtiğiniz şehir ve avatarınız Firebase Firestore bulut veritabanında saklanır ve diğer oyunculara gösterilir."
           )
 
           PolicySection(
-            title = "3. Reklamlar ve AdMob Hizmetleri",
-            body = "Uygulamamız ücretsiz olarak sunulmaktadır. Geliştirme maliyetlerini karşılamak ve yeni mini oyunlar sunabilmek amacıyla Google AdMob reklam kütüphanesi kullanılabilir.\n• Reklam Formatları: Banner reklamlar, geçiş reklamları ve kullanıcı isteğine bağlı ödüllü video reklamlar (2x skor ve can kazanma).\n• Veri Kullanımı: Google AdMob, kullanıcılara ilgi alanlarına uygun veya kişiselleştirilmemiş reklamlar sunabilmek için standart Android Reklam Kimliği (AAID) ve IP adresi gibi teknik verileri kullanabilir. Bu veriler yalnızca reklam sunumu, sahtekarlık tespiti ve performans raporlaması amacıyla kullanılır."
+            title = "3. Hesap Silme ve Veri Hakları (Google Play Politikası)",
+            body = "Google Play kullanıcı verisi koruma ilkeleri gereğince oyuncular diledikleri zaman hesap ve verilerini sildirme hakkına sahiptir. Google ile açtığınız oturumu çıkış yaparak sonlandırabilir veya emirq143@gmail.com adresine talep göndererek Firebase Firestore üzerindeki skor kaydınızın kalıcı olarak silinmesini talep edebilirsiniz."
           )
 
           PolicySection(
-            title = "4. Google Play Veri Güvenliği Beyanı",
-            body = "Google Play Store Veri Güvenliği (Data Safety) formuna uygun olarak:\n• Toplanan ve Paylaşılan Veriler: Yalnızca anonim reklam kimliği (Cihaz/diğer kimlikler) reklam ve analitik işlevleri için üçüncü taraf reklam ağlarıyla (Google AdMob) paylaşılabilir.\n• Güvenlik Uygulamaları: Tüm veri aktarımları HTTPS şifrelemesi ile korunur. Kullanıcı dilediğinde uygulama verilerini temizleyerek yerel tüm verilerini silebilir."
+            title = "4. Reklamlar ve AdMob Hizmetleri",
+            body = "Uygulamamız ücretsiz olarak sunulmaktadır. Geliştirme maliyetlerini karşılamak amacıyla Google AdMob reklam kütüphanesi kullanılabilir.\n• Reklam Formatları: Banner reklamlar, geçiş reklamları ve kullanıcı isteğine bağlı ödüllü video reklamlar (çark için ekstra hak, 2x ödül).\n• Veri Kullanımı: Google AdMob, standart Android Reklam Kimliği (AAID) gibi teknik tanımlayıcıları reklam sunumu, sahtekarlık tespiti ve performans raporlaması amacıyla işleyebilir."
           )
 
           PolicySection(
-            title = "5. Yaş Politikası ve Çocuk Güvenliği",
+            title = "5. Google Play Veri Güvenliği Beyanı (Data Safety)",
+            body = "Google Play Console Veri Güvenliği (Data Safety) beyanına tam uyumludur:\n• Şifreleme: Tüm ağ iletişimleri (Firebase ve AdMob) standart HTTPS / TLS ile şifrelenir.\n• Üçüncü Taraflar: Veriler asla üçüncü şahıslara satılmaz; yalnızca kimlik doğrulama (Google Identity/Firebase) ve isteğe bağlı reklam (AdMob) amacıyla yetkili Google altyapısıyla işlenir."
+          )
+
+          PolicySection(
+            title = "6. Yaş Politikası ve Çocuk Güvenliği",
             body = "Uygulamamız 13 yaş ve üzeri kitle için uygundur. COPPA (Children's Online Privacy Protection Act) ve GDPR ilkelerine tam uyumludur. Bilerek 13 yaşından küçük çocuklara ait kişisel veri toplanmaz."
           )
 
           PolicySection(
-            title = "6. Cihaz İzinleri",
-            body = "• VIBRATE: Oyun içi başarı ve hata durumlarında dokunsal geri bildirim sağlamak amacıyla kullanılır.\n• INTERNET & ACCESS_NETWORK_STATE: Canlı liderlik sıralamasını güncellemek ve reklam sunumu için gereklidir.\nUygulama konum, kamera, mikrofon veya rehber erişimi talep etmez."
+            title = "7. Cihaz İzinleri",
+            body = "• VIBRATE: Çark dönüşü ve oyun içi başarılarda dokunsal geri bildirim sağlamak amacıyla kullanılır.\n• INTERNET & ACCESS_NETWORK_STATE: Firebase canlı liderlik sıralamasını güncellemek ve Google ile giriş doğrulaması için gereklidir.\nUygulama konum, kamera, mikrofon, SMS veya rehber gibi hassas izinler talep etmez."
           )
 
           PolicySection(
-            title = "7. İletişim",
-            body = "Gizlilik politikamız veya uygulamanız hakkındaki tüm soru, öneri ve destek talepleriniz için bize ulaşabilirsiniz:\nE-posta: emirq143@gmail.com"
+            title = "8. İletişim ve Geliştirici Bilgisi",
+            body = "Gizlilik politikamız veya uygulamanız hakkındaki tüm soru, geri bildirim ve veri silme talepleriniz için resmi geliştirici iletişim adresimiz:\nE-posta: emirq143@gmail.com"
           )
 
           Text(

@@ -114,14 +114,14 @@ fun LuckyWheelDialog(
 
   val rewards = remember {
     listOf(
-      WheelReward("30 Altın", "+30", "🪙", Color(0xFFD97706), 30, 0),
-      WheelReward("60 XP", "+60 XP", "⚡", Color(0xFF2563EB), 0, 60),
-      WheelReward("20 Altın", "+20", "🪙", Color(0xFF059669), 20, 0),
-      WheelReward("Gizemli Sandık", "🎁 Sürpriz", "🎁", Color(0xFF7C3AED), 25, 40),
-      WheelReward("80 Altın!", "+80", "👑", Color(0xFFDC2626), 80, 20),
-      WheelReward("100 XP", "+100 XP", "⚡", Color(0xFF0284C7), 0, 100),
-      WheelReward("15 Altın", "+15", "🪙", Color(0xFFEA580C), 15, 0),
-      WheelReward("Elmas Kutu", "💎 Sandık", "💎", Color(0xFFDB2777), 40, 80)
+      WheelReward("10 Altın", "+10 🪙", "🪙", Color(0xFFD97706), 10, 0),
+      WheelReward("35 XP", "+35 XP", "⚡", Color(0xFF2563EB), 0, 35),
+      WheelReward("5 Altın", "+5 🪙", "🪙", Color(0xFF059669), 5, 0),
+      WheelReward("Gizemli Sandık", "🎁 Sürpriz", "🎁", Color(0xFF7C3AED), 12, 25),
+      WheelReward("25 Altın!", "🔥 +25", "👑", Color(0xFFDC2626), 25, 10),
+      WheelReward("50 XP", "+50 XP", "⚡", Color(0xFF0284C7), 0, 50),
+      WheelReward("8 Altın", "+8 🪙", "🪙", Color(0xFFEA580C), 8, 0),
+      WheelReward("Elmas Kutu", "💎 Sandık", "💎", Color(0xFFDB2777), 15, 45)
     )
   }
 
@@ -137,13 +137,14 @@ fun LuckyWheelDialog(
       val extraRotations = 360f * 6 // 6 full turns for high drama
       val targetAngle = extraRotations + (360f - (winningIndex * sectorAngle) - (sectorAngle / 2))
 
-      // Haptic ticking simulation during spin
+      // Audio tick and haptic ticking simulation during spin
       val tickJob = launch {
-        var tickDelay = 60L
+        var tickDelay = 55L
         while (isSpinning) {
+          SoundHapticManager.playWheelTick(soundEnabled)
           SoundHapticManager.vibrateClick(context, vibrationEnabled)
           delay(tickDelay)
-          tickDelay = (tickDelay * 1.08f).toLong().coerceAtMost(350L)
+          tickDelay = (tickDelay * 1.09f).toLong().coerceAtMost(380L)
         }
       }
 
