@@ -153,13 +153,13 @@ fun SettingsDialog(
                 fontWeight = FontWeight.Bold
               )
               Text(
-                text = "Google Play Sürümü v1.0.0",
+                text = "EQ Studios • v1.0.0",
                 color = TextDarkMuted,
                 fontSize = 11.sp
               )
             }
             Text(
-              text = "13+ Uyumlu",
+              text = "EQ Studios",
               color = Color(0xFF0284C7),
               fontSize = 11.sp,
               fontWeight = FontWeight.Bold

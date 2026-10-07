@@ -1,5 +1,6 @@
 package com.example.ui
 
+import android.app.Activity
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
@@ -27,6 +28,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -38,9 +40,11 @@ import com.example.ui.components.GameResultScreen
 import com.example.ui.components.LuckyWheelDialog
 import com.example.ui.components.PrivacyPolicyDialog
 import com.example.ui.components.ReactionAnalyticsDialog
+import com.example.ui.components.ReviveContinueDialog
 import com.example.ui.components.RiskSelectDialog
 import com.example.ui.components.SettingsDialog
 import com.example.ui.components.StreakCelebrationDialog
+import com.example.ui.components.TransitionAdDialog
 import com.example.ui.screens.GamesListScreen
 import com.example.ui.screens.GameplayContainerScreen
 import com.example.ui.screens.HomeScreen
@@ -76,12 +80,17 @@ fun MainScreen(viewModel: GameViewModel) {
   val showSettings by viewModel.showSettings.collectAsStateWithLifecycle()
   val showPrivacyPolicy by viewModel.showPrivacyPolicy.collectAsStateWithLifecycle()
   val showAdSimulation by viewModel.showAdSimulation.collectAsStateWithLifecycle()
+  val showTransitionAdSimulation by viewModel.showTransitionAdSimulation.collectAsStateWithLifecycle()
+  val showReviveDialog by viewModel.showReviveDialog.collectAsStateWithLifecycle()
   val isAdFree by viewModel.isAdFree.collectAsStateWithLifecycle()
   val currentUser by viewModel.currentUser.collectAsStateWithLifecycle()
   val selectedCity by viewModel.selectedCity.collectAsStateWithLifecycle()
   val isSubmittingScore by viewModel.isSubmittingScore.collectAsStateWithLifecycle()
   val syncStatusMessage by viewModel.syncStatusMessage.collectAsStateWithLifecycle()
   val cloudLeaderboard by viewModel.cloudLeaderboard.collectAsStateWithLifecycle()
+
+  val context = LocalContext.current
+  val activity = context as? Activity
 
   // Handle Android back button
   BackHandler(enabled = screenState != ScreenState.START && screenState != ScreenState.HOME) {
@@ -210,7 +219,8 @@ fun MainScreen(viewModel: GameViewModel) {
                 onRoundMistake = { timePenalty, reason -> viewModel.onRoundMistake(timePenalty, reason) },
                 onSetTimerPaused = { paused -> viewModel.setTimerPaused(paused) },
                 onSuccess = { scoreBonus, accuracy -> viewModel.onGameSuccess(scoreBonus, accuracy) },
-                onFail = { reason -> viewModel.onGameFail(reason) }
+                onFail = { reason -> viewModel.onGameFail(reason) },
+                onWatchAdRevive = { viewModel.triggerReviveRewardedAd(activity) }
               )
             }
           }
@@ -218,10 +228,10 @@ fun MainScreen(viewModel: GameViewModel) {
             activeSession?.let { session ->
               GameResultScreen(
                 session = session,
-                onContinue = { viewModel.backToHome() },
-                onPlayAgain = { viewModel.playAgain() },
-                onWatchAdDouble = { viewModel.requestRewardedAd(AdRewardType.DOUBLE_REWARD) },
-                onWatchAdSecondChance = { viewModel.requestRewardedAd(AdRewardType.SECOND_CHANCE) }
+                onContinue = { viewModel.handleGameTransition(activity) { viewModel.backToHome() } },
+                onPlayAgain = { viewModel.handleGameTransition(activity) { viewModel.playAgain() } },
+                onWatchAdDouble = { viewModel.requestRewardedAdWithActivity(activity, AdRewardType.DOUBLE_REWARD) },
+                onWatchAdSecondChance = { viewModel.requestRewardedAdWithActivity(activity, AdRewardType.SECOND_CHANCE) }
               )
             }
           }
@@ -254,7 +264,7 @@ fun MainScreen(viewModel: GameViewModel) {
           onRewardClaimed = { coins, xp -> viewModel.claimLuckyWheelReward(coins, xp) },
           onWatchAdForSpin = {
             viewModel.dismissLuckyWheel()
-            viewModel.requestRewardedAd(AdRewardType.EXTRA_SPIN)
+            viewModel.requestRewardedAdWithActivity(activity, AdRewardType.EXTRA_SPIN)
           },
           onDismiss = { viewModel.dismissLuckyWheel() }
         )
@@ -291,6 +301,30 @@ fun MainScreen(viewModel: GameViewModel) {
       if (showPrivacyPolicy) {
         PrivacyPolicyDialog(
           onDismiss = { viewModel.dismissPrivacyPolicy() }
+        )
+      }
+
+      // 2-Game Transition / Interstitial Ad Dialog
+      if (showTransitionAdSimulation) {
+        TransitionAdDialog(
+          onDismiss = { viewModel.dismissTransitionAdSimulation() }
+        )
+      }
+
+      // In-game Revive / Second Chance Rewarded Ad Dialog (ca-app-pub-4020568333948380/7841422376)
+      showReviveDialog?.let { reason ->
+        val currentScore = activeSession?.currentScore ?: 0
+        val combo = activeSession?.comboStreak ?: 0
+        ReviveContinueDialog(
+          reason = reason,
+          currentScore = currentScore,
+          comboStreak = combo,
+          onWatchAdRevive = {
+            viewModel.triggerReviveRewardedAd(activity)
+          },
+          onSkipAndEnd = {
+            viewModel.skipReviveAndEndGame()
+          }
         )
       }
 

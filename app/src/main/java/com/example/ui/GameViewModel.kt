@@ -1,5 +1,6 @@
 package com.example.ui
 
+import android.app.Activity
 import android.app.Application
 import android.content.Context
 import android.os.Build
@@ -8,6 +9,7 @@ import android.os.Vibrator
 import android.os.VibratorManager
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.ads.AdManager
 import com.example.data.auth.GoogleAuthManager
 import com.example.data.model.AvatarItem
 import com.example.data.model.DailyMission
@@ -62,7 +64,8 @@ data class GamePlaySession(
   val isVictory: Boolean = false,
   val accuracyPercent: Int = 100,
   val feedbackText: String = "",
-  val xpGained: Int = 0
+  val xpGained: Int = 0,
+  val hasUsedRevive: Boolean = false
 )
 
 class GameViewModel(application: Application) : AndroidViewModel(application) {
@@ -137,11 +140,20 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
   private val _showPrivacyPolicy = MutableStateFlow(false)
   val showPrivacyPolicy: StateFlow<Boolean> = _showPrivacyPolicy.asStateFlow()
 
+  private val _showReviveDialog = MutableStateFlow<String?>(null) // Contains reason if shown
+  val showReviveDialog: StateFlow<String?> = _showReviveDialog.asStateFlow()
+
   private val _showAdSimulation = MutableStateFlow<AdRewardType?>(null)
   val showAdSimulation: StateFlow<AdRewardType?> = _showAdSimulation.asStateFlow()
 
+  private val _showTransitionAdSimulation = MutableStateFlow(false)
+  val showTransitionAdSimulation: StateFlow<Boolean> = _showTransitionAdSimulation.asStateFlow()
+
   private val _isAdFree = MutableStateFlow(false)
   val isAdFree: StateFlow<Boolean> = _isAdFree.asStateFlow()
+
+  private var gamesPlayedCount = 0
+  private var pendingTransitionAction: (() -> Unit)? = null
 
   private var timerJob: Job? = null
   private val context: Context get() = getApplication<Application>().applicationContext
@@ -150,8 +162,58 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     _showAdSimulation.value = type
   }
 
+  fun requestRewardedAdWithActivity(activity: Activity?, type: AdRewardType) {
+    if (_isAdFree.value) {
+      onAdRewardGranted(type)
+      return
+    }
+    AdManager.showRewardedAd(
+      activity = activity,
+      onRewardEarned = { onAdRewardGranted(type) },
+      onFallback = { _showAdSimulation.value = type }
+    )
+  }
+
+  fun handleGameTransition(activity: Activity?, onProceed: () -> Unit) {
+    if (_isAdFree.value || gamesPlayedCount <= 0 || gamesPlayedCount % 2 != 0) {
+      onProceed()
+      return
+    }
+
+    if (AdManager.isTransitionAdReady() && activity != null) {
+      AdManager.showTransitionAd(activity) {
+        onProceed()
+      }
+    } else {
+      pendingTransitionAction = onProceed
+      _showTransitionAdSimulation.value = true
+    }
+  }
+
+  fun dismissTransitionAdSimulation() {
+    _showTransitionAdSimulation.value = false
+    val action = pendingTransitionAction
+    pendingTransitionAction = null
+    action?.invoke()
+  }
+
   fun dismissAdSimulation() {
     _showAdSimulation.value = null
+  }
+
+  fun dismissReviveDialog() {
+    _showReviveDialog.value = null
+  }
+
+  fun triggerReviveRewardedAd(activity: Activity?) {
+    _showReviveDialog.value = null
+    requestRewardedAdWithActivity(activity, AdRewardType.SECOND_CHANCE)
+  }
+
+  fun skipReviveAndEndGame() {
+    val reason = _showReviveDialog.value ?: "Süre doldu!"
+    _showReviveDialog.value = null
+    finalizeGameFinish(reason = reason)
   }
 
   fun onAdRewardGranted(type: AdRewardType) {
@@ -167,12 +229,15 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         }
       }
       AdRewardType.SECOND_CHANCE -> {
+        _showReviveDialog.value = null
         val session = _activeSession.value
         if (session != null) {
           _activeSession.value = session.copy(
             isFinished = false,
+            isTimerPaused = false,
+            hasUsedRevive = true,
             remainingSeconds = 5f,
-            feedbackText = "İkinci şans! 5 saniyen var!"
+            feedbackText = "🔥 Can Yenilendi! +5 Saniye Süre!"
           )
           _screenState.value = ScreenState.GAME_PLAY
           startTimer()
@@ -396,14 +461,18 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
 
         val nextTime = max(0f, current.remainingSeconds - step)
         if (nextTime <= 0f) {
-          val isWin = current.currentScore > 0 || current.questionsAnswered > 0
-          _activeSession.value = current.copy(
-            remainingSeconds = 0f,
-            isFinished = true,
-            isVictory = isWin,
-            feedbackText = if (isWin) "${current.questionsAnswered} soru başarıyla çözüldü!" else "Süre doldu!"
-          )
-          onGameCompleted(isVictory = isWin, accuracy = if (isWin) 85 else 30)
+          timerJob?.cancel()
+          if (!current.hasUsedRevive) {
+            // Give user the chance to watch a rewarded ad to revive and continue playing!
+            _activeSession.value = current.copy(
+              remainingSeconds = 0f,
+              isTimerPaused = true,
+              feedbackText = "Süre doldu!"
+            )
+            _showReviveDialog.value = "Süren tükendi! Reklam izleyerek +5 saniye ile devam edebilirsin."
+          } else {
+            finalizeGameFinish(reason = if (current.currentScore > 0 || current.questionsAnswered > 0) "${current.questionsAnswered} soru başarıyla çözüldü!" else "Süre doldu!")
+          }
           break
         } else {
           // Warning vibration when <= 3 seconds left
@@ -458,14 +527,24 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
 
     if (session.isRiskMode) {
       timerJob?.cancel()
-      _activeSession.value = session.copy(
-        isFinished = true,
-        isVictory = false,
-        questionsAnswered = session.questionsAnswered + 1,
-        mistakeCount = session.mistakeCount + 1,
-        feedbackText = "Risk Modunda Hata Yaptın: $reason"
-      )
-      onGameCompleted(isVictory = false, accuracy = 20)
+      if (!session.hasUsedRevive) {
+        _activeSession.value = session.copy(
+          isTimerPaused = true,
+          questionsAnswered = session.questionsAnswered + 1,
+          mistakeCount = session.mistakeCount + 1,
+          feedbackText = "Risk Modunda Hata Yaptın: $reason"
+        )
+        _showReviveDialog.value = "Risk modunda hata yaptın! Reklam izleyerek +5 saniye ile devam edebilirsin."
+      } else {
+        _activeSession.value = session.copy(
+          isFinished = true,
+          isVictory = false,
+          questionsAnswered = session.questionsAnswered + 1,
+          mistakeCount = session.mistakeCount + 1,
+          feedbackText = "Risk Modunda Hata Yaptın: $reason"
+        )
+        onGameCompleted(isVictory = false, accuracy = 20)
+      }
     } else {
       // Normal mod: Saniye azaltma yok! Direkt yanlış olarak işaretle ve devam et
       _activeSession.value = session.copy(
@@ -526,17 +605,33 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     val session = _activeSession.value ?: return
     if (session.isFinished) return
 
-    val isWin = session.currentScore > 0 || session.questionsAnswered > 0
+    val profile = userProfile.value
+    SoundHapticManager.playFail(profile.soundEnabled)
+    SoundHapticManager.vibrateFail(context, profile.vibrationEnabled)
     timerJob?.cancel()
+
+    if (!session.hasUsedRevive) {
+      _activeSession.value = session.copy(
+        isTimerPaused = true,
+        feedbackText = reason
+      )
+      _showReviveDialog.value = "$reason Reklam izleyerek +5 saniye ile devam edebilirsin."
+    } else {
+      finalizeGameFinish(reason = reason)
+    }
+  }
+
+  fun finalizeGameFinish(reason: String = "Süre doldu!") {
+    val session = _activeSession.value ?: return
+    timerJob?.cancel()
+    val isWin = session.currentScore > 0 || session.questionsAnswered > 0
     _activeSession.value = session.copy(
+      remainingSeconds = 0f,
       isFinished = true,
       isVictory = isWin,
       accuracyPercent = if (isWin) 70 else 20,
       feedbackText = if (isWin) "${session.correctCount} doğru, ${session.mistakeCount} yanlış!" else reason
     )
-    val profile = userProfile.value
-    SoundHapticManager.playFail(profile.soundEnabled)
-    SoundHapticManager.vibrateFail(context, profile.vibrationEnabled)
     onGameCompleted(isVictory = isWin, accuracy = if (isWin) 70 else 20)
   }
 
@@ -564,6 +659,8 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     if (isVictory && (userProfile.value.currentStreak + 1) % 5 == 0) {
       _showStreakCelebration.value = true
     }
+
+    gamesPlayedCount++
 
     _screenState.value = ScreenState.GAME_RESULT
   }

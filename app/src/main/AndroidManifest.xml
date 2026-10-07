@@ -27,10 +27,10 @@
             </intent-filter>
         </activity>
 
-        <!-- Google Mobile Ads (AdMob) Sample Application ID for Play Store & SDK readiness -->
+        <!-- Google Mobile Ads (AdMob) Application ID -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-3940256099942544~3347511713"/>
+            android:value="ca-app-pub-4020568333948380~2045425356"/>
     </application>
 
 </manifest>

@@ -3,26 +3,43 @@ package com.example.ui.screens
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.R
 import com.example.data.model.GameType
 import com.example.ui.GamePlaySession
@@ -34,6 +51,7 @@ import com.example.ui.screens.games.QuickMathGame
 import com.example.ui.screens.games.StroopColorGame
 import com.example.ui.screens.games.SymbolMemoryGame
 import com.example.ui.screens.games.WorkingMemoryGame
+import com.example.ui.theme.NeonGold
 import kotlinx.coroutines.launch
 
 @Composable
@@ -45,6 +63,7 @@ fun GameplayContainerScreen(
   onSetTimerPaused: (Boolean) -> Unit = {},
   onSuccess: (scoreBonus: Int, accuracy: Int) -> Unit = { _, _ -> },
   onFail: (reason: String) -> Unit = {},
+  onWatchAdRevive: () -> Unit = {},
   modifier: Modifier = Modifier
 ) {
   BackHandler(onBack = onBack)
@@ -244,6 +263,55 @@ fun GameplayContainerScreen(
         onSuccess = handleSuccess,
         onFail = handleFail
       )
+    }
+
+    // Quick Rewarded Ad Boost Button (visible when timer drops to 5s or less and revive hasn't been used yet)
+    if (!session.hasUsedRevive && session.remainingSeconds in 0.1f..5.5f) {
+      val infiniteTransition = rememberInfiniteTransition(label = "pulseAd")
+      val pulseScale by infiniteTransition.animateFloat(
+        initialValue = 0.95f,
+        targetValue = 1.05f,
+        animationSpec = infiniteRepeatable(
+          animation = tween(400),
+          repeatMode = RepeatMode.Reverse
+        ),
+        label = "pulseAdScale"
+      )
+
+      Box(
+        modifier = Modifier
+          .fillMaxSize()
+          .padding(top = 70.dp, end = 16.dp),
+        contentAlignment = Alignment.TopEnd
+      ) {
+        Box(
+          modifier = Modifier
+            .scale(pulseScale)
+            .shadow(12.dp, RoundedCornerShape(20.dp), spotColor = Color(0xFF10B981))
+            .clip(RoundedCornerShape(20.dp))
+            .background(
+              Brush.horizontalGradient(
+                listOf(Color(0xFF10B981), Color(0xFF059669))
+              )
+            )
+            .border(1.5.dp, Color.White.copy(alpha = 0.7f), RoundedCornerShape(20.dp))
+            .clickable { onWatchAdRevive() }
+            .padding(horizontal = 12.dp, vertical = 7.dp)
+        ) {
+          Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+          ) {
+            Text(text = "🎬", fontSize = 14.sp)
+            Text(
+              text = "+5s Ek Süre",
+              color = Color.White,
+              fontSize = 12.sp,
+              fontWeight = FontWeight.Black
+            )
+          }
+        }
+      }
     }
   }
 }

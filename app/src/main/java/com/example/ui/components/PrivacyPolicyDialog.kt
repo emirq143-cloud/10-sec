@@ -149,11 +149,11 @@ fun PrivacyPolicyDialog(
 
           PolicySection(
             title = "8. İletişim ve Geliştirici Bilgisi",
-            body = "Gizlilik politikamız veya uygulamanız hakkındaki tüm soru, geri bildirim ve veri silme talepleriniz için resmi geliştirici iletişim adresimiz:\nE-posta: emirq143@gmail.com"
+            body = "EQ Studios tarafından geliştirilmiştir.\nGizlilik politikamız veya oyunumuz hakkındaki tüm soru, geri bildirim ve veri silme talepleriniz için resmi geliştirici iletişim adresimiz:\nE-posta: emirq143@gmail.com\nGeliştirici / Stüdyo: EQ Studios"
           )
 
           Text(
-            text = "Son güncelleme: Eylül 2026 • Sürüm 1.0.0",
+            text = "EQ Studios • Sürüm 1.0.0 • Son güncelleme: 2026",
             color = TextDarkMuted,
             fontSize = 11.sp,
             modifier = Modifier.padding(top = 4.dp)

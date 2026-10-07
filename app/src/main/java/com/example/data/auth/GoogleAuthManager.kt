@@ -14,26 +14,46 @@ import com.google.firebase.auth.GoogleAuthProvider
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.tasks.await
 
-class GoogleAuthManager(
-  private val auth: FirebaseAuth = FirebaseAuth.getInstance()
-) {
-  val currentUser: FirebaseUser?
-    get() = auth.currentUser
+class GoogleAuthManager {
+  private val auth: FirebaseAuth? = try {
+    FirebaseAuth.getInstance()
+  } catch (e: Exception) {
+    null
+  }
 
-  val authStateFlow: Flow<FirebaseUser?> = callbackFlow {
-    val listener = FirebaseAuth.AuthStateListener { firebaseAuth ->
-      trySend(firebaseAuth.currentUser)
+  val currentUser: FirebaseUser?
+    get() = auth?.currentUser
+
+  val authStateFlow: Flow<FirebaseUser?> = if (auth != null) {
+    callbackFlow {
+      val listener = FirebaseAuth.AuthStateListener { firebaseAuth ->
+        trySend(firebaseAuth.currentUser)
+      }
+      auth.addAuthStateListener(listener)
+      awaitClose { auth.removeAuthStateListener(listener) }
     }
-    auth.addAuthStateListener(listener)
-    awaitClose { auth.removeAuthStateListener(listener) }
+  } else {
+    emptyFlow()
   }
 
   suspend fun signInWithGoogle(context: Context): Result<FirebaseUser> {
+    val firebaseAuth = auth ?: return Result.failure(
+      IllegalStateException("Firebase Auth servisi hazır değil.")
+    )
+
     return runCatching {
       val credentialManager = CredentialManager.create(context)
-      val webClientId = context.getString(R.string.default_web_client_id)
+      
+      // Attempt to retrieve Web Client ID from generated resources or fallback constant
+      val webClientId = try {
+        val resId = context.resources.getIdentifier("default_web_client_id", "string", context.packageName)
+        if (resId != 0) context.getString(resId) else "703490968047-fvdk38smirt651rgtd6lm7jtnjpbo3m8.apps.googleusercontent.com"
+      } catch (_: Exception) {
+        "703490968047-fvdk38smirt651rgtd6lm7jtnjpbo3m8.apps.googleusercontent.com"
+      }
 
       val signInWithGoogleOption = GetSignInWithGoogleOption.Builder(webClientId)
         .build()
@@ -49,7 +69,7 @@ class GoogleAuthManager(
         val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
         val idToken = googleIdTokenCredential.idToken
         val firebaseCredential = GoogleAuthProvider.getCredential(idToken, null)
-        val authResult = auth.signInWithCredential(firebaseCredential).await()
+        val authResult = firebaseAuth.signInWithCredential(firebaseCredential).await()
         authResult.user ?: error("Firebase kullanıcı doğrulaması başarısız oldu.")
       } else {
         error("Bilinmeyen kimlik bilgisi türü: ${credential.type}")
@@ -63,6 +83,6 @@ class GoogleAuthManager(
       credentialManager.clearCredentialState(ClearCredentialStateRequest())
     } catch (_: Exception) {
     }
-    auth.signOut()
+    auth?.signOut()
   }
 }
