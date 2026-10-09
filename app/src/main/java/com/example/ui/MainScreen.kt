@@ -188,13 +188,11 @@ fun MainScreen(viewModel: GameViewModel) {
           )
           ScreenState.LEADERBOARD -> LeaderboardScreen(
             userProfile = userProfile,
-            entries = viewModel.getLeaderboard(selectedCity),
+            entries = viewModel.getLeaderboard(leaderboardTab),
             selectedTab = leaderboardTab,
             onSelectTab = { viewModel.setLeaderboardTab(it) },
             onUpdateName = { viewModel.setUserName(it) },
             currentUser = currentUser,
-            selectedCity = selectedCity,
-            onSelectCity = { viewModel.setSelectedCity(it) },
             isSubmittingScore = isSubmittingScore,
             syncStatusMessage = syncStatusMessage,
             onDismissSyncMessage = { viewModel.clearSyncStatusMessage() },
@@ -208,7 +206,8 @@ fun MainScreen(viewModel: GameViewModel) {
             onSelectAvatar = { viewModel.selectAvatar(it) },
             onPurchaseAvatar = { viewModel.purchaseAvatar(it) },
             onOpenSettings = { viewModel.openSettings() },
-            onOpenReactionAnalytics = { viewModel.openReactionAnalytics() }
+            onOpenReactionAnalytics = { viewModel.openReactionAnalytics() },
+            onUpdateName = { viewModel.setUserName(it) }
           )
           ScreenState.GAME_PLAY -> {
             activeSession?.let { session ->

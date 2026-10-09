@@ -283,7 +283,7 @@ fun EstimationBarGame(
         .shadow(16.dp, RoundedCornerShape(24.dp), spotColor = NeonGold.copy(alpha = 0.6f))
     ) {
       Text(
-        text = if (isStopped) "DURDURULDU!" else "BURAYA DOKUN: DURDUR! 🛑",
+        text = if (isStopped) com.example.util.LocalizationManager.string("stopped") else "${com.example.util.LocalizationManager.string("press_stop")}! 🛑",
         color = Color.Black,
         fontSize = 17.sp,
         fontWeight = FontWeight.Black

@@ -173,7 +173,7 @@ fun ReviveContinueDialog(
             verticalArrangement = Arrangement.spacedBy(4.dp)
           ) {
             Text(
-              text = "OYUNA DEVAM ET?",
+              text = com.example.util.LocalizationManager.string("revive_title"),
               color = Color.White,
               fontSize = 22.sp,
               fontWeight = FontWeight.Black,
@@ -202,12 +202,12 @@ fun ReviveContinueDialog(
               verticalAlignment = Alignment.CenterVertically
             ) {
               Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(text = "KORUNACAK SKOR", color = Color.White.copy(alpha = 0.6f), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                Text(text = com.example.util.LocalizationManager.string("score_label"), color = Color.White.copy(alpha = 0.6f), fontSize = 10.sp, fontWeight = FontWeight.Bold)
                 Text(text = "$currentScore", color = NeonGold, fontSize = 18.sp, fontWeight = FontWeight.Black)
               }
               Box(modifier = Modifier.width(1.dp).height(24.dp).background(Color.White.copy(alpha = 0.2f)))
               Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(text = "SERİ", color = Color.White.copy(alpha = 0.6f), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                Text(text = com.example.util.LocalizationManager.string("streak_label"), color = Color.White.copy(alpha = 0.6f), fontSize = 10.sp, fontWeight = FontWeight.Bold)
                 Text(text = "$comboStreak 🔥", color = NeonOrange, fontSize = 18.sp, fontWeight = FontWeight.Black)
               }
             }
@@ -232,13 +232,13 @@ fun ReviveContinueDialog(
               Text(text = "🎬", fontSize = 22.sp)
               Column(horizontalAlignment = Alignment.Start) {
                 Text(
-                  text = "Reklam İzle & Oyuna Devam Et",
+                  text = com.example.util.LocalizationManager.string("revive_btn"),
                   color = Color.White,
                   fontSize = 15.sp,
                   fontWeight = FontWeight.Black
                 )
                 Text(
-                  text = "+5 Saniye Ek Süre Kazan",
+                  text = com.example.util.LocalizationManager.string("revive_desc"),
                   color = Color(0xFFD1FAE5),
                   fontSize = 11.sp,
                   fontWeight = FontWeight.Bold
@@ -253,7 +253,7 @@ fun ReviveContinueDialog(
             modifier = Modifier.fillMaxWidth()
           ) {
             Text(
-              text = "Hayır, Oyunu Bitir ($countdownSeconds s)",
+              text = "${com.example.util.LocalizationManager.string("skip_and_finish")} ($countdownSeconds s)",
               color = Color.White.copy(alpha = 0.65f),
               fontSize = 13.sp,
               fontWeight = FontWeight.Bold,

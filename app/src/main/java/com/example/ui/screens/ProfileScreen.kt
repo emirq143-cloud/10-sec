@@ -57,12 +57,19 @@ import com.example.ui.theme.TextDarkSecondary
 import com.example.ui.theme.VibrantGreen
 import com.example.ui.theme.VibrantPink
 
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Speed
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextButton
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.window.Dialog
+import com.example.util.NicknameValidationResult
+import com.example.util.ProfanityFilter
 
 @Composable
 fun ProfileScreen(
@@ -72,10 +79,13 @@ fun ProfileScreen(
   onPurchaseAvatar: (String) -> Unit = {},
   onOpenSettings: () -> Unit = {},
   onOpenReactionAnalytics: () -> Unit = {},
+  onUpdateName: (String) -> Unit = {},
   modifier: Modifier = Modifier
 ) {
   var avatarFilter by remember { mutableStateOf("Tümü") }
   var avatarToPurchase by remember { mutableStateOf<AvatarItem?>(null) }
+  var showEditNameDialog by remember { mutableStateOf(false) }
+  var editedNickname by remember { mutableStateOf(userProfile.name) }
 
   val filteredAvatars = remember(avatarFilter, avatars) {
     when (avatarFilter) {
@@ -127,12 +137,33 @@ fun ProfileScreen(
               }
 
               Column {
-                Text(
-                  text = userProfile.name,
-                  color = TextDark,
-                  fontSize = 20.sp,
-                  fontWeight = FontWeight.ExtraBold
-                )
+                Row(
+                  verticalAlignment = Alignment.CenterVertically,
+                  horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                  Text(
+                    text = userProfile.name,
+                    color = TextDark,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.ExtraBold
+                  )
+                  IconButton(
+                    onClick = {
+                      editedNickname = userProfile.name
+                      showEditNameDialog = true
+                    },
+                    modifier = Modifier
+                      .size(28.dp)
+                      .testTag("edit_nickname_button")
+                  ) {
+                    Icon(
+                      imageVector = Icons.Default.Edit,
+                      contentDescription = "Takma Adı Düzenle",
+                      tint = BluePrimary,
+                      modifier = Modifier.size(16.dp)
+                    )
+                  }
+                }
                 Text(
                   text = "${userProfile.league.displayName} • #${userProfile.nationalRank}",
                   color = BluePrimary,
@@ -481,6 +512,61 @@ fun ProfileScreen(
           avatarToPurchase = null
         },
         onDismiss = { avatarToPurchase = null }
+      )
+    }
+
+    if (showEditNameDialog) {
+      val validation = remember(editedNickname) { ProfanityFilter.validateNickname(editedNickname) }
+
+      AlertDialog(
+        onDismissRequest = { showEditNameDialog = false },
+        title = { Text("Takma Adını Değiştir", color = TextDark, fontWeight = FontWeight.Bold) },
+        text = {
+          Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(
+              text = "Liderlik tablosunda ve profilinde görünecek takma adını belirle (Küfür ve hakaret içeremez):",
+              color = TextDarkSecondary,
+              fontSize = 13.sp
+            )
+            OutlinedTextField(
+              value = editedNickname,
+              onValueChange = {
+                if (it.length <= 16) editedNickname = it
+              },
+              singleLine = true,
+              isError = validation is NicknameValidationResult.Invalid,
+              label = { Text("Takma Ad") },
+              modifier = Modifier.fillMaxWidth().testTag("edit_nickname_textfield")
+            )
+            if (validation is NicknameValidationResult.Invalid) {
+              Text(
+                text = "⚠️ " + validation.errorMessage,
+                color = Color(0xFFEF4444),
+                fontSize = 12.sp,
+                fontWeight = FontWeight.SemiBold
+              )
+            }
+          }
+        },
+        confirmButton = {
+          Button(
+            onClick = {
+              if (validation is NicknameValidationResult.Valid) {
+                onUpdateName(editedNickname.trim())
+                showEditNameDialog = false
+              }
+            },
+            enabled = validation is NicknameValidationResult.Valid,
+            modifier = Modifier.testTag("save_nickname_button")
+          ) {
+            Text("Kaydet")
+          }
+        },
+        dismissButton = {
+          TextButton(onClick = { showEditNameDialog = false }) {
+            Text("İptal")
+          }
+        }
       )
     }
   }

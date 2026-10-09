@@ -20,6 +20,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -32,6 +33,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.R
 import com.example.ui.GamePlaySession
 import com.example.ui.theme.BluePrimary
@@ -43,6 +45,7 @@ import com.example.ui.theme.SkyBlueAccent
 import com.example.ui.theme.TextDark
 import com.example.ui.theme.TextDarkMuted
 import com.example.ui.theme.TextDarkSecondary
+import com.example.util.LocalizationManager
 
 @Composable
 fun GameResultScreen(
@@ -53,6 +56,8 @@ fun GameResultScreen(
   onWatchAdSecondChance: () -> Unit = {},
   modifier: Modifier = Modifier
 ) {
+  val currentLang by LocalizationManager.currentLanguage.collectAsStateWithLifecycle()
+
   Box(
     modifier = modifier.fillMaxSize(),
     contentAlignment = Alignment.Center
@@ -104,13 +109,13 @@ fun GameResultScreen(
 
       Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
-          text = if (session.isVictory) "Harika!" else "Süre Doldu!",
+          text = if (session.isVictory) LocalizationManager.string("game_won_title") else LocalizationManager.string("game_lost_title"),
           color = TextDark,
           fontSize = 28.sp,
           fontWeight = FontWeight.Black
         )
         Text(
-          text = if (session.isVictory) "Bu turu başarıyla kazandın!" else session.feedbackText,
+          text = if (session.isVictory) LocalizationManager.string("game_won_desc") else session.feedbackText,
           color = TextDarkSecondary,
           fontSize = 14.sp,
           textAlign = TextAlign.Center
@@ -132,7 +137,7 @@ fun GameResultScreen(
           contentAlignment = Alignment.Center
         ) {
           Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(text = "Skorun", color = TextDarkSecondary, fontSize = 12.sp)
+            Text(text = LocalizationManager.string("score_label"), color = TextDarkSecondary, fontSize = 12.sp)
             Spacer(modifier = Modifier.height(4.dp))
             Text(
               text = "+${session.currentScore}",
@@ -153,7 +158,7 @@ fun GameResultScreen(
           contentAlignment = Alignment.Center
         ) {
           Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(text = "XP Kazanımı", color = Color(0xFFB45309), fontSize = 12.sp)
+            Text(text = LocalizationManager.string("xp_gained"), color = Color(0xFFB45309), fontSize = 12.sp)
             Spacer(modifier = Modifier.height(4.dp))
             Text(
               text = "+${session.xpGained} XP",
@@ -176,7 +181,7 @@ fun GameResultScreen(
           contentAlignment = Alignment.Center
         ) {
           Text(
-            text = "🔥 3X RİSK ÖDÜLÜ AKTİF EDİLDİ!",
+            text = LocalizationManager.string("risk_mode_reward_active"),
             color = NeonOrange,
             fontSize = 12.sp,
             fontWeight = FontWeight.ExtraBold
@@ -202,13 +207,13 @@ fun GameResultScreen(
             Text(text = "🎬", fontSize = 18.sp)
             Column(horizontalAlignment = Alignment.Start) {
               Text(
-                text = "Reklam İzle & 2X Skor Kazan!",
+                text = LocalizationManager.string("watch_ad_2x"),
                 color = Color.Black,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Black
               )
               Text(
-                text = "+${session.currentScore} Ek Puan & +50 Altın",
+                text = LocalizationManager.string("watch_ad_2x_sub", session.currentScore),
                 color = Color(0xFF78350F),
                 fontSize = 10.sp,
                 fontWeight = FontWeight.Bold
@@ -232,7 +237,7 @@ fun GameResultScreen(
           ) {
             Text(text = "❤️", fontSize = 18.sp)
             Text(
-              text = "Reklam İzle & İkinci Şans (+5s) Al!",
+              text = LocalizationManager.string("watch_ad_second_chance"),
               color = Color.White,
               fontSize = 13.sp,
               fontWeight = FontWeight.Black
@@ -254,7 +259,7 @@ fun GameResultScreen(
           .shadow(8.dp, RoundedCornerShape(20.dp), spotColor = SkyBlueAccent.copy(alpha = 0.4f))
       ) {
         Text(
-          text = "Devam Et",
+          text = LocalizationManager.string("continue_game"),
           color = Color.Black,
           fontSize = 15.sp,
           fontWeight = FontWeight.Bold
@@ -270,7 +275,7 @@ fun GameResultScreen(
           .height(48.dp)
       ) {
         Text(
-          text = "Tekrar Oyna",
+          text = LocalizationManager.string("play_again"),
           fontSize = 15.sp,
           fontWeight = FontWeight.SemiBold
         )

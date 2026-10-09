@@ -58,6 +58,7 @@ class LeaderboardRepositoryRuleTest : FirestoreEmulatorTestBase() {
     val repo1 = LeaderboardRepository(firestore, auth)
     repo1.submitScore("PlayerLow", "default", "🧑‍🚀", 1200, 3, "İzmir")
 
+    auth.signOut()
     val user2 = signInTestUser("p2@example.com")
     val repo2 = LeaderboardRepository(firestore, auth)
     repo2.submitScore("PlayerHigh", "ninja", "🥷", 9800, 10, "Ankara")

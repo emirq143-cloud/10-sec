@@ -14,12 +14,12 @@ class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     enableEdgeToEdge()
-    AdManager.initialize(this)
     setContent {
       MyApplicationTheme {
         val viewModel: GameViewModel = viewModel()
         MainScreen(viewModel = viewModel)
       }
     }
+    AdManager.initialize(applicationContext)
   }
 }

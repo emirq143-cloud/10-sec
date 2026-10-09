@@ -8,7 +8,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,31 +21,19 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.CloudDone
 import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Psychology
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -54,7 +41,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -81,31 +67,37 @@ import com.example.ui.theme.SkyBlueAccent
 import com.example.ui.theme.TextDark
 import com.example.ui.theme.TextDarkMuted
 import com.example.ui.theme.TextDarkSecondary
+import com.example.util.NicknameValidationResult
+import com.example.util.ProfanityFilter
 import com.google.firebase.auth.FirebaseUser
-import kotlinx.coroutines.launch
 import java.text.NumberFormat
 import java.util.Locale
 
-val TURKISH_CITIES = listOf(
-  "İstanbul", "Ankara", "İzmir", "Bursa", "Antalya",
-  "Adana", "Konya", "Gaziantep", "Şanlıurfa", "Kocaeli",
-  "Mersin", "Diyarbakır", "Hatay", "Manisa", "Kayseri",
-  "Samsun", "Balıkesir", "Kahramanmaraş", "Van", "Aydın",
-  "Tekirdağ", "Denizli", "Sakarya", "Muğla", "Eskişehir",
-  "Trabzon", "Malatya", "Ordu", "Erzurum", "Sivas"
-)
+fun getCountryFlag(countryCode: String): String {
+  return when (countryCode.uppercase()) {
+    "TR" -> "🇹🇷"
+    "US" -> "🇺🇸"
+    "JP" -> "🇯🇵"
+    "DE" -> "🇩🇪"
+    "BR" -> "🇧🇷"
+    "IT" -> "🇮🇹"
+    "FR" -> "🇫🇷"
+    "GB", "UK" -> "🇬🇧"
+    "ES" -> "🇪🇸"
+    "KR" -> "🇰🇷"
+    "CA" -> "🇨🇦"
+    else -> "🌍"
+  }
+}
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LeaderboardScreen(
   userProfile: UserProfile,
   entries: List<LeaderboardEntry>,
-  selectedTab: Int,
+  selectedTab: Int, // 0: Türkiye, 1: Dünya
   onSelectTab: (Int) -> Unit,
   onUpdateName: (String) -> Unit = {},
   currentUser: FirebaseUser? = null,
-  selectedCity: String = "İstanbul",
-  onSelectCity: (String) -> Unit = {},
   isSubmittingScore: Boolean = false,
   syncStatusMessage: String? = null,
   onDismissSyncMessage: () -> Unit = {},
@@ -115,31 +107,21 @@ fun LeaderboardScreen(
   modifier: Modifier = Modifier
 ) {
   val context = LocalContext.current
-  val scope = rememberCoroutineScope()
-  val formatter = NumberFormat.getNumberInstance(Locale.forLanguageTag("tr-TR"))
+  val formatter = remember { NumberFormat.getNumberInstance(Locale.forLanguageTag("tr-TR")) }
 
   var showEditProfileDialog by remember { mutableStateOf(false) }
   var editedName by remember { mutableStateOf(userProfile.name) }
-  var editedCity by remember { mutableStateOf(selectedCity) }
-  var cityFilter by remember { mutableStateOf("Tüm Türkiye") }
 
-  // Filter entries based on selected city filter chip
-  val displayedEntries = remember(entries, cityFilter) {
-    if (cityFilter == "Tüm Türkiye") {
-      entries
-    } else {
-      entries.filter { it.city.equals(cityFilter, ignoreCase = true) || it.isUser }
-    }
+  val top3 = remember(entries) { entries.take(3) }
+  val remainingEntries = remember(entries) {
+    if (entries.size > 3) entries.drop(3) else emptyList()
   }
 
-  val top3 = remember(displayedEntries) { displayedEntries.take(3) }
-  val remainingEntries = remember(displayedEntries) {
-    if (displayedEntries.size > 3) displayedEntries.drop(3) else emptyList()
+  val userRankEntry = remember(entries) {
+    entries.find { it.isUser }
   }
 
-  val userRankEntry = remember(displayedEntries) {
-    displayedEntries.find { it.isUser }
-  }
+  val isTurkeyTab = selectedTab == 0
 
   AppBackgroundEffect(modifier = modifier) {
     Column(modifier = Modifier.fillMaxSize()) {
@@ -159,12 +141,12 @@ fun LeaderboardScreen(
             horizontalArrangement = Arrangement.spacedBy(8.dp)
           ) {
             Text(
-              text = "🏆 Türkiye Beyin Ligi",
+              text = "🏆 Liderlik Tablosu",
               color = Color.White,
               fontSize = 22.sp,
               fontWeight = FontWeight.ExtraBold
             )
-            Text(text = "🇹🇷", fontSize = 20.sp)
+            Text(text = if (isTurkeyTab) "🇹🇷" else "🌍", fontSize = 20.sp)
           }
 
           Row(
@@ -179,7 +161,7 @@ fun LeaderboardScreen(
                 .background(if (currentUser != null) Color(0xFF34D399) else Color(0xFFFBBF24))
             )
             Text(
-              text = if (currentUser != null) "Firestore Canlı Bulut Sıralaması" else "Yerel Mod (Giriş Yapılmadı)",
+              text = if (currentUser != null) "Canlı Bulut Sıralaması" else "Yerel Sıralama",
               color = if (currentUser != null) Color(0xFF34D399) else Color(0xFFFDE68A),
               fontSize = 11.sp,
               fontWeight = FontWeight.SemiBold
@@ -190,7 +172,6 @@ fun LeaderboardScreen(
         IconButton(
           onClick = {
             editedName = userProfile.name
-            editedCity = selectedCity
             showEditProfileDialog = true
           },
           modifier = Modifier
@@ -198,14 +179,79 @@ fun LeaderboardScreen(
             .clip(CircleShape)
             .background(CardFrosted)
             .border(1.5.dp, SkyBlueAccent, CircleShape)
-            .testTag("edit_city_name_button")
+            .testTag("edit_player_name_button")
         ) {
           Icon(
             imageVector = Icons.Default.Edit,
-            contentDescription = "Bilgileri Düzenle",
+            contentDescription = "Takma Adı Düzenle",
             tint = BluePrimary,
             modifier = Modifier.size(20.dp)
           )
+        }
+      }
+
+      Spacer(modifier = Modifier.height(12.dp))
+
+      // Segmented Tabs: Türkiye & Dünya (clean and simple)
+      Row(
+        modifier = Modifier
+          .fillMaxWidth()
+          .padding(horizontal = 18.dp)
+          .clip(RoundedCornerShape(16.dp))
+          .background(Color(0xFF0F172A).copy(alpha = 0.9f))
+          .border(1.dp, Color(0xFF334155), RoundedCornerShape(16.dp))
+          .padding(4.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
+      ) {
+        // Tab 0: Türkiye
+        Box(
+          modifier = Modifier
+            .weight(1f)
+            .clip(RoundedCornerShape(12.dp))
+            .background(if (isTurkeyTab) BluePrimary else Color.Transparent)
+            .clickable { onSelectTab(0) }
+            .padding(vertical = 10.dp)
+            .testTag("leaderboard_tab_turkey"),
+          contentAlignment = Alignment.Center
+        ) {
+          Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+          ) {
+            Text(text = "🇹🇷", fontSize = 16.sp)
+            Text(
+              text = "Türkiye",
+              color = if (isTurkeyTab) Color.White else Color(0xFF94A3B8),
+              fontSize = 14.sp,
+              fontWeight = if (isTurkeyTab) FontWeight.Bold else FontWeight.Medium
+            )
+          }
+        }
+
+        // Tab 1: Dünya
+        val isWorldTab = selectedTab == 1
+        Box(
+          modifier = Modifier
+            .weight(1f)
+            .clip(RoundedCornerShape(12.dp))
+            .background(if (isWorldTab) BluePrimary else Color.Transparent)
+            .clickable { onSelectTab(1) }
+            .padding(vertical = 10.dp)
+            .testTag("leaderboard_tab_world"),
+          contentAlignment = Alignment.Center
+        ) {
+          Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+          ) {
+            Text(text = "🌍", fontSize = 16.sp)
+            Text(
+              text = "Dünya",
+              color = if (isWorldTab) Color.White else Color(0xFF94A3B8),
+              fontSize = 14.sp,
+              fontWeight = if (isWorldTab) FontWeight.Bold else FontWeight.Medium
+            )
+          }
         }
       }
 
@@ -236,13 +282,13 @@ fun LeaderboardScreen(
               Text(text = "🧠", fontSize = 22.sp)
               Column {
                 Text(
-                  text = "Türkiye Sıralamasında Yerini Al!",
+                  text = "Liderlik Tablosunda Yerini Al!",
                   color = Color.White,
                   fontSize = 14.sp,
                   fontWeight = FontWeight.Bold
                 )
                 Text(
-                  text = "Beyin skorunu kaydetmek ve Türkiye genelinde yarışmak için giriş yap.",
+                  text = "Beyin skorunu kaydetmek ve sıralamada yarışmak için giriş yap.",
                   color = Color(0xFFCBD5E1),
                   fontSize = 11.sp
                 )
@@ -334,7 +380,7 @@ fun LeaderboardScreen(
                   overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                  text = "📍 $selectedCity • Canlı Bulut Senkronize",
+                  text = "Canlı Bulut Senkronize",
                   color = Color(0xFF34D399),
                   fontSize = 11.sp,
                   fontWeight = FontWeight.Medium
@@ -432,50 +478,6 @@ fun LeaderboardScreen(
 
       Spacer(modifier = Modifier.height(10.dp))
 
-      // Turkish City Filter Horizontal Chips
-      Column(modifier = Modifier.padding(horizontal = 18.dp)) {
-        Text(
-          text = "📍 İl Filtresi & Bölgesel Sıralama",
-          color = Color(0xFFCBD5E1),
-          fontSize = 12.sp,
-          fontWeight = FontWeight.SemiBold,
-          modifier = Modifier.padding(bottom = 6.dp)
-        )
-
-        val cityChips = listOf("Tüm Türkiye", "İstanbul", "Ankara", "İzmir", "Bursa", "Antalya", "Adana", "Konya", "Trabzon", "Eskişehir", "Gaziantep", "Samsun")
-
-        LazyRow(
-          horizontalArrangement = Arrangement.spacedBy(8.dp),
-          contentPadding = PaddingValues(vertical = 2.dp)
-        ) {
-          items(cityChips) { city ->
-            val isSelected = cityFilter == city
-            Box(
-              modifier = Modifier
-                .clip(RoundedCornerShape(20.dp))
-                .background(if (isSelected) BluePrimary else Color(0x661E293B))
-                .border(
-                  width = 1.dp,
-                  color = if (isSelected) Color(0xFF38BDF8) else Color(0x33CBD5E1),
-                  shape = RoundedCornerShape(20.dp)
-                )
-                .clickable { cityFilter = city }
-                .padding(horizontal = 12.dp, vertical = 6.dp)
-                .testTag("city_filter_${city.lowercase()}")
-            ) {
-              Text(
-                text = city,
-                color = if (isSelected) Color.White else Color(0xFFE2E8F0),
-                fontSize = 12.sp,
-                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
-              )
-            }
-          }
-        }
-      }
-
-      Spacer(modifier = Modifier.height(12.dp))
-
       // Scrollable Rankings Area: Podium (Top 3) + Ranks (4+)
       LazyColumn(
         modifier = Modifier
@@ -504,7 +506,7 @@ fun LeaderboardScreen(
                 modifier = Modifier.fillMaxWidth()
               ) {
                 Text(
-                  text = "👑 ZİRVEDEKİ BEYİNLER",
+                  text = if (isTurkeyTab) "👑 TÜRKİYE'NİN EN İYİLERİ" else "👑 DÜNYANIN EN İYİLERİ",
                   color = NeonGold,
                   fontSize = 12.sp,
                   fontWeight = FontWeight.Black,
@@ -526,7 +528,8 @@ fun LeaderboardScreen(
                       medal = "🥈",
                       pedestalHeight = 70.dp,
                       badgeColor = Color(0xFFE2E8F0),
-                      formatter = formatter
+                      formatter = formatter,
+                      isWorldTab = !isTurkeyTab
                     )
                   } else {
                     Spacer(modifier = Modifier.width(90.dp))
@@ -539,7 +542,8 @@ fun LeaderboardScreen(
                     medal = "🥇",
                     pedestalHeight = 96.dp,
                     badgeColor = Color(0xFFFFD700),
-                    formatter = formatter
+                    formatter = formatter,
+                    isWorldTab = !isTurkeyTab
                   )
 
                   // 3rd Place (Right)
@@ -550,7 +554,8 @@ fun LeaderboardScreen(
                       medal = "🥉",
                       pedestalHeight = 54.dp,
                       badgeColor = Color(0xFFFDBA74),
-                      formatter = formatter
+                      formatter = formatter,
+                      isWorldTab = !isTurkeyTab
                     )
                   } else {
                     Spacer(modifier = Modifier.width(90.dp))
@@ -644,14 +649,16 @@ fun LeaderboardScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                   ) {
+                    if (!isTurkeyTab) {
+                      Text(
+                        text = "${getCountryFlag(entry.country)} ${entry.country}",
+                        color = TextDarkMuted,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Medium
+                      )
+                    }
                     Text(
-                      text = "📍 ${entry.city}",
-                      color = TextDarkMuted,
-                      fontSize = 11.sp,
-                      fontWeight = FontWeight.Medium
-                    )
-                    Text(
-                      text = "• ${entry.league.displayName}",
+                      text = entry.league.displayName,
                       color = entry.league.color,
                       fontSize = 11.sp,
                       fontWeight = FontWeight.SemiBold
@@ -711,17 +718,18 @@ fun LeaderboardScreen(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(10.dp)
           ) {
-            Text(text = "🇹🇷", fontSize = 26.sp)
+            Text(text = if (isTurkeyTab) "🇹🇷" else "🌍", fontSize = 26.sp)
             Column {
               Text(
-                text = "Senin Sıralaman (📍 $selectedCity)",
+                text = if (isTurkeyTab) "Senin Sıralaman (Türkiye)" else "Senin Sıralaman (Dünya)",
                 color = TextDarkSecondary,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Medium
               )
               Text(
                 text = if (userRankEntry != null) "#${userRankEntry.rank} Sırada"
-                else "Türkiye'de #${userProfile.nationalRank}",
+                else if (isTurkeyTab) "Türkiye'de #${userProfile.nationalRank}"
+                else "Dünyada #${userProfile.nationalRank + 240}",
                 color = TextDark,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.ExtraBold
@@ -736,7 +744,7 @@ fun LeaderboardScreen(
             ) {
               Text(text = "🧠", fontSize = 14.sp)
               Text(
-                text = "${formatter.format(userProfile.overallBrainScore * 10 + userProfile.totalScore)}",
+                text = formatter.format(userProfile.overallBrainScore * 10 + userProfile.totalScore),
                 color = BluePrimary,
                 fontSize = 17.sp,
                 fontWeight = FontWeight.ExtraBold
@@ -752,77 +760,64 @@ fun LeaderboardScreen(
       }
     }
 
-    // Edit Name & City Dialog
+    // Edit Name Dialog with Profanity Filter
     if (showEditProfileDialog) {
+      val validation = remember(editedName) { ProfanityFilter.validateNickname(editedName) }
+
       AlertDialog(
         onDismissRequest = { showEditProfileDialog = false },
-        title = { Text("Oyuncu Profilini Güncelle", color = TextDark, fontWeight = FontWeight.Bold) },
+        title = {
+          Text(
+            text = "Takma Adını Değiştir",
+            color = TextDark,
+            fontWeight = FontWeight.Bold
+          )
+        },
         text = {
-          Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+          Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text(
-              text = "Liderlik tablosunda Türkiye'ye görünecek adını ve şehrini seç:",
+              text = "Liderlik tablosunda görünecek takma adını belirle (Küfür ve hakaret içeremez):",
               color = TextDarkSecondary,
               fontSize = 13.sp
             )
 
             OutlinedTextField(
               value = editedName,
-              onValueChange = { editedName = it },
+              onValueChange = {
+                if (it.length <= 16) editedName = it
+              },
               singleLine = true,
-              label = { Text("Oyuncu Adı") },
-              modifier = Modifier.fillMaxWidth()
+              isError = validation is NicknameValidationResult.Invalid,
+              label = { Text("Oyuncu Adı / Takma Ad") },
+              modifier = Modifier
+                .fillMaxWidth()
+                .testTag("edit_leaderboard_nickname_field")
             )
 
-            Text(
-              text = "Şehrin:",
-              color = TextDark,
-              fontSize = 13.sp,
-              fontWeight = FontWeight.Bold
-            )
-
-            // City selection dropdown/chips
-            var expandedCityDropdown by remember { mutableStateOf(false) }
-            ExposedDropdownMenuBox(
-              expanded = expandedCityDropdown,
-              onExpandedChange = { expandedCityDropdown = !expandedCityDropdown }
-            ) {
-              OutlinedTextField(
-                value = editedCity,
-                onValueChange = {},
-                readOnly = true,
-                label = { Text("Şehir") },
-                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedCityDropdown) },
-                modifier = Modifier
-                  .menuAnchor()
-                  .fillMaxWidth()
+            if (validation is NicknameValidationResult.Invalid) {
+              Text(
+                text = "⚠️ " + validation.errorMessage,
+                color = Color(0xFFEF4444),
+                fontSize = 12.sp,
+                fontWeight = FontWeight.SemiBold
               )
-              ExposedDropdownMenu(
-                expanded = expandedCityDropdown,
-                onDismissRequest = { expandedCityDropdown = false }
-              ) {
-                TURKISH_CITIES.forEach { city ->
-                  DropdownMenuItem(
-                    text = { Text(city) },
-                    onClick = {
-                      editedCity = city
-                      expandedCityDropdown = false
-                    }
-                  )
-                }
-              }
             }
           }
         },
         confirmButton = {
-          Button(onClick = {
-            onUpdateName(editedName)
-            onSelectCity(editedCity)
-            showEditProfileDialog = false
-            // Auto submit to cloud if signed in
-            if (currentUser != null) {
-              onSubmitScoreToCloud(null)
-            }
-          }) {
+          Button(
+            onClick = {
+              if (validation is NicknameValidationResult.Valid) {
+                onUpdateName(editedName.trim())
+                showEditProfileDialog = false
+                if (currentUser != null) {
+                  onSubmitScoreToCloud(null)
+                }
+              }
+            },
+            enabled = validation is NicknameValidationResult.Valid,
+            modifier = Modifier.testTag("save_leaderboard_nickname_button")
+          ) {
             Text("Kaydet & Güncelle")
           }
         },
@@ -843,7 +838,8 @@ fun PodiumColumn(
   medal: String,
   pedestalHeight: androidx.compose.ui.unit.Dp,
   badgeColor: Color,
-  formatter: NumberFormat
+  formatter: NumberFormat,
+  isWorldTab: Boolean = false
 ) {
   Column(
     horizontalAlignment = Alignment.CenterHorizontally,
@@ -863,13 +859,23 @@ fun PodiumColumn(
       textAlign = TextAlign.Center
     )
 
-    Text(
-      text = "📍 ${entry.city}",
-      color = Color(0xFF94A3B8),
-      fontSize = 10.sp,
-      maxLines = 1,
-      overflow = TextOverflow.Ellipsis
-    )
+    if (isWorldTab) {
+      Text(
+        text = "${getCountryFlag(entry.country)} ${entry.country}",
+        color = Color(0xFF94A3B8),
+        fontSize = 10.sp,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis
+      )
+    } else {
+      Text(
+        text = entry.league.displayName,
+        color = entry.league.color,
+        fontSize = 10.sp,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis
+      )
+    }
 
     Row(
       verticalAlignment = Alignment.CenterVertically,

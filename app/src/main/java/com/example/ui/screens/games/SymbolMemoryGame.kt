@@ -188,7 +188,7 @@ fun SymbolMemoryGame(
           .padding(horizontal = 16.dp, vertical = 6.dp)
       ) {
         Text(
-          text = "👁️ 2 SANİYE İNCELE!",
+          text = com.example.util.LocalizationManager.string("inspect_symbols"),
           color = NeonGold,
           fontSize = 13.sp,
           fontWeight = FontWeight.Black
@@ -213,7 +213,7 @@ fun SymbolMemoryGame(
           .padding(horizontal = 16.dp, vertical = 6.dp)
       ) {
         Text(
-          text = "👇 DEĞİŞEN YENİ SEMBOLE DOKUN! 👇",
+          text = com.example.util.LocalizationManager.string("tap_changed_symbol"),
           color = SkyBlueAccent,
           fontSize = 13.sp,
           fontWeight = FontWeight.Black

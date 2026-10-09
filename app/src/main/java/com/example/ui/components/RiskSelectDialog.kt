@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -23,6 +24,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.data.model.GameType
 import com.example.ui.theme.BluePrimary
 import com.example.ui.theme.CardBorderLight
@@ -33,6 +35,7 @@ import com.example.ui.theme.OrangeLight
 import com.example.ui.theme.SkyBlueAccent
 import com.example.ui.theme.TextDark
 import com.example.ui.theme.TextDarkSecondary
+import com.example.util.LocalizationManager
 
 @Composable
 fun RiskSelectDialog(
@@ -40,6 +43,8 @@ fun RiskSelectDialog(
   onSelectMode: (isRisk: Boolean) -> Unit,
   onDismiss: () -> Unit
 ) {
+  val currentLang by LocalizationManager.currentLanguage.collectAsStateWithLifecycle()
+
   Dialog(onDismissRequest = onDismiss) {
     Box(
       modifier = Modifier
@@ -90,14 +95,14 @@ fun RiskSelectDialog(
                 Text(text = "🛡️", fontSize = 18.sp)
                 Spacer(modifier = Modifier.padding(3.dp))
                 Text(
-                  text = "Güvenli Mod",
+                  text = LocalizationManager.string("safe_mode"),
                   color = TextDark,
                   fontSize = 16.sp,
                   fontWeight = FontWeight.Bold
                 )
               }
               Text(
-                text = "${gameType.defaultDurationSeconds} saniye süre",
+                text = LocalizationManager.string("safe_mode_desc"),
                 color = TextDarkSecondary,
                 fontSize = 12.sp
               )
@@ -139,14 +144,14 @@ fun RiskSelectDialog(
                 Text(text = "🔥", fontSize = 18.sp)
                 Spacer(modifier = Modifier.padding(3.dp))
                 Text(
-                  text = "Risk Al! (3x Ödül)",
+                  text = LocalizationManager.string("risk_mode"),
                   color = Color(0xFFC2410C),
                   fontSize = 16.sp,
                   fontWeight = FontWeight.ExtraBold
                 )
               }
               Text(
-                text = "${gameType.riskDurationSeconds} saniye - Hızlı & Zor!",
+                text = LocalizationManager.string("risk_mode_desc"),
                 color = NeonOrange,
                 fontSize = 12.sp
               )

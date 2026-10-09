@@ -22,6 +22,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.foundation.border
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -35,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.R
 import com.example.ui.theme.BluePrimary
+import com.example.ui.theme.NeonGold
 import com.example.ui.theme.SkyBlueAccent
 
 @Composable
@@ -83,12 +85,19 @@ fun StartScreen(
       ) {
         Box(
           modifier = Modifier
-            .size(76.dp)
-            .shadow(20.dp, CircleShape, spotColor = SkyBlueAccent)
-            .background(Color.White.copy(alpha = 0.2f), CircleShape),
+            .size(136.dp)
+            .shadow(24.dp, CircleShape, spotColor = SkyBlueAccent.copy(alpha = 0.6f))
+            .clip(CircleShape)
+            .background(Color(0xFF0F172A))
+            .border(3.dp, NeonGold, CircleShape),
           contentAlignment = Alignment.Center
         ) {
-          Text(text = "⏱️", fontSize = 38.sp)
+          Image(
+            painter = painterResource(id = R.drawable.game_logo_ten_sec_1791565905718),
+            contentDescription = "10 SEC Logo Rozeti",
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop
+          )
         }
 
         Spacer(modifier = Modifier.height(14.dp))

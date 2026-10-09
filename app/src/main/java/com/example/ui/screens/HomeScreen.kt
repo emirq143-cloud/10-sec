@@ -26,6 +26,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -37,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.IconButton
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.data.model.DailyMission
 import com.example.data.model.GameCategory
 import com.example.data.model.GameType
@@ -60,6 +62,7 @@ import com.example.ui.theme.TextDarkMuted
 import com.example.ui.theme.TextDarkSecondary
 import com.example.ui.theme.VibrantGreen
 import com.example.ui.theme.VibrantPink
+import com.example.util.LocalizationManager
 
 @Composable
 fun HomeScreen(
@@ -75,6 +78,7 @@ fun HomeScreen(
   onOpenSettings: () -> Unit = {},
   modifier: Modifier = Modifier
 ) {
+  val currentLang by LocalizationManager.currentLanguage.collectAsStateWithLifecycle()
   AppBackgroundEffect(modifier = modifier) {
     LazyColumn(
       modifier = Modifier
@@ -120,7 +124,7 @@ fun HomeScreen(
                 fontWeight = FontWeight.ExtraBold
               )
               Text(
-                text = "Seviye ${userProfile.level}",
+                text = "${LocalizationManager.string("level_label")} ${userProfile.level}",
                 color = BluePrimary,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold
@@ -179,7 +183,7 @@ fun HomeScreen(
             ) {
               Icon(
                 imageVector = Icons.Default.Settings,
-                contentDescription = "Ayarlar",
+                contentDescription = LocalizationManager.string("settings"),
                 tint = TextDarkSecondary,
                 modifier = Modifier.size(20.dp)
               )
@@ -215,7 +219,7 @@ fun HomeScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 modifier = Modifier.fillMaxWidth()
               ) {
-                Text(text = "🎯 Günlük Çark", color = Color(0xFF78350F), fontSize = 14.sp, fontWeight = FontWeight.ExtraBold)
+                Text(text = LocalizationManager.string("daily_wheel_title"), color = Color(0xFF78350F), fontSize = 14.sp, fontWeight = FontWeight.ExtraBold)
                 Box(
                   modifier = Modifier
                     .clip(CircleShape)
@@ -231,14 +235,14 @@ fun HomeScreen(
                 }
               }
               Text(
-                text = if (!userProfile.hasSpunWheelToday) "Hediye altın & XP seni bekliyor!" else "Bugün çevrildi (Reklamla +1)",
+                text = if (!userProfile.hasSpunWheelToday) LocalizationManager.string("daily_wheel_ready") else LocalizationManager.string("daily_wheel_done"),
                 color = Color(0xFF92400E),
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Medium
               )
               Spacer(modifier = Modifier.height(2.dp))
               Text(
-                text = if (!userProfile.hasSpunWheelToday) "ŞİMDİ ÇEVİR ➔" else "DETAY ➔",
+                text = if (!userProfile.hasSpunWheelToday) LocalizationManager.string("spin_now") else LocalizationManager.string("details"),
                 color = Color(0xFFB45309),
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Black
@@ -263,13 +267,13 @@ fun HomeScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 modifier = Modifier.fillMaxWidth()
               ) {
-                Text(text = "⚡ Tepki Hızın", color = TextDark, fontSize = 14.sp, fontWeight = FontWeight.ExtraBold)
+                Text(text = LocalizationManager.string("reaction_speed_title"), color = TextDark, fontSize = 14.sp, fontWeight = FontWeight.ExtraBold)
                 Text(text = "⏱️", fontSize = 18.sp)
               }
-              Text(text = "${userProfile.avgReactionTimeMs} ms (%${userProfile.reactionPercentile} hızlı)", color = BluePrimary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+              Text(text = "${userProfile.avgReactionTimeMs} ms", color = BluePrimary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
               Spacer(modifier = Modifier.height(2.dp))
               Text(
-                text = "ANALİZİ GÖR ➔",
+                text = LocalizationManager.string("reaction_analysis_btn"),
                 color = Color(0xFF0284C7),
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Black
@@ -302,7 +306,7 @@ fun HomeScreen(
               ) {
                 Text(text = "🎯", fontSize = 18.sp)
                 Text(
-                  text = "Günlük Görevler",
+                  text = LocalizationManager.string("daily_missions"),
                   color = TextDark,
                   fontSize = 16.sp,
                   fontWeight = FontWeight.Bold
@@ -364,14 +368,14 @@ fun HomeScreen(
                       .padding(horizontal = 10.dp, vertical = 4.dp)
                   ) {
                     Text(
-                      text = "ÖDÜLÜ AL (+${mission.xpReward} XP)",
+                      text = "${LocalizationManager.string("claim_reward")} (+${mission.xpReward} XP)",
                       color = Color.White,
                       fontSize = 11.sp,
                       fontWeight = FontWeight.Bold
                     )
                   }
                 } else if (mission.isClaimed) {
-                  Text(text = "Alındı ✓", color = VibrantGreen, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                  Text(text = LocalizationManager.string("claimed"), color = VibrantGreen, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 } else {
                   Text(
                     text = "${mission.current}/${mission.target}",
@@ -417,7 +421,7 @@ fun HomeScreen(
               ) {
                 Icon(
                   imageVector = Icons.Default.FlashOn,
-                  contentDescription = "Hızlı Oyun",
+                  contentDescription = LocalizationManager.string("quick_play"),
                   tint = NeonOrange,
                   modifier = Modifier.size(30.dp)
                 )
@@ -425,13 +429,13 @@ fun HomeScreen(
 
               Column {
                 Text(
-                  text = "Hızlı Oyun Modu",
+                  text = LocalizationManager.string("quick_play_title"),
                   color = TextDark,
                   fontSize = 18.sp,
                   fontWeight = FontWeight.ExtraBold
                 )
                 Text(
-                  text = "10 saniyede refleksini test et!",
+                  text = LocalizationManager.string("quick_play_sub"),
                   color = TextDarkSecondary,
                   fontSize = 12.sp
                 )
@@ -446,7 +450,7 @@ fun HomeScreen(
                 .padding(horizontal = 14.dp, vertical = 8.dp)
             ) {
               Text(
-                text = "OYNA ⚡",
+                text = LocalizationManager.string("play_btn"),
                 color = Color.White,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Black
@@ -463,7 +467,7 @@ fun HomeScreen(
           horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
           CategoryPillCard(
-            title = "Refleks",
+            title = LocalizationManager.string("cat_reflex"),
             icon = "⚡",
             bgColor = OrangeLight,
             textColor = NeonOrange,
@@ -471,7 +475,7 @@ fun HomeScreen(
             onClick = { onSelectGame(GameType.REFLEX_DOTS) }
           )
           CategoryPillCard(
-            title = "Mantık",
+            title = LocalizationManager.string("cat_logic"),
             icon = "🧠",
             bgColor = Color(0xFFE0F2FE),
             textColor = BluePrimary,
@@ -479,7 +483,7 @@ fun HomeScreen(
             onClick = { onSelectGame(GameType.QUICK_MATH) }
           )
           CategoryPillCard(
-            title = "Hafıza",
+            title = LocalizationManager.string("cat_memory"),
             icon = "👁️",
             bgColor = PinkLight,
             textColor = VibrantPink,
@@ -489,7 +493,7 @@ fun HomeScreen(
         }
       }
 
-      // Lig & Türkiye Sıralaması Card
+      // Lig & Sıralama Card
       item {
         Box(
           modifier = Modifier
@@ -528,8 +532,7 @@ fun HomeScreen(
                   fontWeight = FontWeight.Bold
                 )
                 Text(
-                  text = if (userProfile.nationalRank == 1) "👑 Türkiye 1.sisin!"
-                  else "Türkiye'de #${userProfile.nationalRank}",
+                  text = "#${userProfile.nationalRank}",
                   color = if (userProfile.nationalRank == 1) NeonGold else BluePrimary,
                   fontSize = 13.sp,
                   fontWeight = FontWeight.SemiBold
@@ -545,7 +548,7 @@ fun HomeScreen(
                 .padding(horizontal = 10.dp, vertical = 6.dp)
             ) {
               Text(
-                text = "SIRALAMA ➔",
+                text = LocalizationManager.string("ranking_btn"),
                 color = BluePrimary,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Bold

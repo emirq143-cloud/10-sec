@@ -38,6 +38,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.data.model.GameCategory
 import com.example.data.model.GameType
 import com.example.ui.components.AppBackgroundEffect
@@ -51,12 +52,14 @@ import com.example.ui.theme.SkyBlueAccent
 import com.example.ui.theme.TextDark
 import com.example.ui.theme.TextDarkMuted
 import com.example.ui.theme.TextDarkSecondary
+import com.example.util.LocalizationManager
 
 @Composable
 fun GamesListScreen(
   onSelectGame: (GameType) -> Unit,
   modifier: Modifier = Modifier
 ) {
+  val currentLang by LocalizationManager.currentLanguage.collectAsStateWithLifecycle()
   var selectedCategory by remember { mutableStateOf<GameCategory?>(null) }
   val allGames = remember { GameType.values().toList() }
 
@@ -73,14 +76,14 @@ fun GamesListScreen(
       Spacer(modifier = Modifier.height(16.dp))
 
       Text(
-        text = "🎮 Mini Oyunlar",
+        text = LocalizationManager.string("games_title"),
         color = Color.White,
         fontSize = 24.sp,
         fontWeight = FontWeight.ExtraBold
       )
 
       Text(
-        text = "Refleks, zeka, hafıza ve odaklanma antrenmanı",
+        text = LocalizationManager.string("games_subtitle"),
         color = SkyBlueAccent,
         fontSize = 13.sp,
         fontWeight = FontWeight.Medium
@@ -97,7 +100,7 @@ fun GamesListScreen(
           FilterChip(
             selected = selectedCategory == null,
             onClick = { selectedCategory = null },
-            label = { Text("Tümü", fontWeight = FontWeight.Bold) },
+            label = { Text(LocalizationManager.string("all_filter"), fontWeight = FontWeight.Bold) },
             colors = FilterChipDefaults.filterChipColors(
               selectedContainerColor = BluePrimary,
               selectedLabelColor = Color.White,
@@ -107,10 +110,16 @@ fun GamesListScreen(
           )
         }
         items(GameCategory.values()) { category ->
+          val catLabel = when (category) {
+            GameCategory.REFLEX -> LocalizationManager.string("cat_reflex")
+            GameCategory.LOGIC -> LocalizationManager.string("cat_logic")
+            GameCategory.MEMORY -> LocalizationManager.string("cat_memory")
+            GameCategory.ATTENTION -> LocalizationManager.string("cat_attention")
+          }
           FilterChip(
             selected = selectedCategory == category,
             onClick = { selectedCategory = if (selectedCategory == category) null else category },
-            label = { Text(category.title, fontWeight = FontWeight.Bold) },
+            label = { Text(catLabel, fontWeight = FontWeight.Bold) },
             colors = FilterChipDefaults.filterChipColors(
               selectedContainerColor = BluePrimary,
               selectedLabelColor = Color.White,
@@ -234,14 +243,14 @@ fun GameRowCard(
           horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
           Text(
-            text = "OYNA",
+            text = com.example.util.LocalizationManager.string("play_btn"),
             color = Color.White,
             fontSize = 12.sp,
             fontWeight = FontWeight.Black
           )
           Icon(
             imageVector = Icons.Default.PlayArrow,
-            contentDescription = "Oyna",
+            contentDescription = com.example.util.LocalizationManager.string("play_btn"),
             tint = Color.White,
             modifier = Modifier.size(16.dp)
           )

@@ -44,16 +44,20 @@ import com.example.ui.theme.VibrantRed
 import kotlin.random.Random
 
 data class ColorItem(
-  val name: String,
+  val key: String,
+  val defaultName: String,
   val color: Color
-)
+) {
+  val displayName: String
+    get() = com.example.util.LocalizationManager.string(key)
+}
 
 val COLOR_POOL = listOf(
-  ColorItem("Kırmızı", Color(0xFFEF4444)),
-  ColorItem("Mavi", Color(0xFF3B82F6)),
-  ColorItem("Yeşil", Color(0xFF10B981)),
-  ColorItem("Sarı", Color(0xFFFBBF24)),
-  ColorItem("Mor", Color(0xFFA855F7))
+  ColorItem("color_red", "Kırmızı", Color(0xFFEF4444)),
+  ColorItem("color_blue", "Mavi", Color(0xFF3B82F6)),
+  ColorItem("color_green", "Yeşil", Color(0xFF10B981)),
+  ColorItem("color_yellow", "Sarı", Color(0xFFFBBF24)),
+  ColorItem("color_purple", "Mor", Color(0xFFA855F7))
 )
 
 enum class StroopTargetRule {
@@ -110,7 +114,7 @@ fun StroopColorGame(
     } else {
       feedbackText = "✗ YANLIŞ RENK!"
       feedbackIsSuccess = false
-      onRoundMistake(2.0f, "Hatalı renk seçtin! Doğru: ${challenge.targetColor.name}")
+      onRoundMistake(2.0f, "Hatalı renk seçtin! Doğru: ${challenge.targetColor.displayName}")
       if (!isRiskMode) {
         challenge = generateRandomStroop()
       }
@@ -165,9 +169,9 @@ fun StroopColorGame(
 
     // Kural İpucu Banner'ı
     val ruleDescription = if (challenge.rule == StroopTargetRule.WORD_TEXT) {
-      "YAZILAN KELİMENİN RENGİNE BAS!"
+      com.example.util.LocalizationManager.string("rule_stroop_word")
     } else {
-      "MÜREKKEP / YAZI RENGİNE BAS!"
+      com.example.util.LocalizationManager.string("rule_stroop_ink")
     }
 
     Box(
@@ -178,7 +182,7 @@ fun StroopColorGame(
         .padding(horizontal = 16.dp, vertical = 6.dp)
     ) {
       Text(
-        text = "⚡ KURAL: $ruleDescription",
+        text = "⚡ ${com.example.util.LocalizationManager.string("rule_prefix")} $ruleDescription",
         color = NeonGold,
         fontSize = 12.sp,
         fontWeight = FontWeight.Black,
@@ -202,14 +206,14 @@ fun StroopColorGame(
     ) {
       Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
-          text = challenge.wordItem.name.uppercase(),
+          text = challenge.wordItem.displayName.uppercase(),
           color = challenge.inkItem.color,
           fontSize = 42.sp,
           fontWeight = FontWeight.Black,
           letterSpacing = 2.sp
         )
         Text(
-          text = "(Yazı: ${challenge.wordItem.name} • Renk: ${challenge.inkItem.name})",
+          text = "(${challenge.wordItem.displayName} • ${challenge.inkItem.displayName})",
           color = TextDark.copy(alpha = 0.6f),
           fontSize = 11.sp,
           fontWeight = FontWeight.SemiBold
@@ -220,7 +224,7 @@ fun StroopColorGame(
     Spacer(modifier = Modifier.height(16.dp))
 
     Text(
-      text = "👇 AŞAĞIDAKİ DOĞRU BALONA DOKUN 👇",
+      text = com.example.util.LocalizationManager.string("stroop_tap_balloon"),
       color = SkyBlueAccent,
       fontSize = 12.sp,
       fontWeight = FontWeight.Black,
@@ -307,7 +311,7 @@ private fun ColorBalloon(
           .background(Color.White)
       )
       Text(
-        text = item.name,
+        text = item.displayName,
         color = Color.White,
         fontSize = 18.sp,
         fontWeight = FontWeight.Black

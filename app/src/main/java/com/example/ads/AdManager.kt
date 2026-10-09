@@ -15,6 +15,9 @@ import com.google.android.gms.ads.rewarded.RewardedAd
 import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback
 import com.google.android.gms.ads.rewardedinterstitial.RewardedInterstitialAd
 import com.google.android.gms.ads.rewardedinterstitial.RewardedInterstitialAdLoadCallback
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 object AdManager {
   private const val TAG = "AdManager"
@@ -37,14 +40,17 @@ object AdManager {
    */
   fun initialize(context: Context) {
     if (isInitialized) return
-    try {
-      MobileAds.initialize(context) { status ->
-        isInitialized = true
-        Log.d(TAG, "AdMob SDK Initialized: $status")
-        preloadAds(context)
+    val appContext = context.applicationContext
+    CoroutineScope(Dispatchers.IO).launch {
+      try {
+        MobileAds.initialize(appContext) { status ->
+          isInitialized = true
+          Log.d(TAG, "AdMob SDK Initialized: $status")
+          preloadAds(appContext)
+        }
+      } catch (e: Throwable) {
+        Log.w(TAG, "AdMob initialization notice: ${e.message}")
       }
-    } catch (e: Exception) {
-      Log.e(TAG, "Failed to initialize AdMob SDK", e)
     }
   }
 

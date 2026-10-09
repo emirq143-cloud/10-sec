@@ -425,8 +425,7 @@ class GameRepository(context: Context) {
 
     val basePool = when (tabIndex) {
       0 -> competitorsGlobal
-      1 -> competitorsTurkey
-      else -> competitorsFriends
+      else -> competitorsTurkey
     }
 
     // Merge online pool with current user's real live score!

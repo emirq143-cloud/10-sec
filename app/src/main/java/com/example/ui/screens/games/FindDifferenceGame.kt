@@ -204,7 +204,7 @@ fun FindDifferenceGame(
         .padding(horizontal = 14.dp, vertical = 3.dp)
     ) {
       Text(
-        text = "👇 ALTTALİ RESİMDEKİ GİZLİ FARKA DOKUN! 👇",
+        text = com.example.util.LocalizationManager.string("find_diff_instruction"),
         color = NeonOrange,
         fontSize = 11.sp,
         fontWeight = FontWeight.Black

@@ -171,14 +171,14 @@ fun FastTapGame(
         horizontalArrangement = Arrangement.spacedBy(10.dp)
       ) {
         Text(
-          text = "🟢 YEŞİLE BAS!",
+          text = com.example.util.LocalizationManager.string("tap_green"),
           color = Color(0xFF34D399),
           fontSize = 13.sp,
           fontWeight = FontWeight.Black
         )
         Text(text = "•", color = Color.White)
         Text(
-          text = "🔴 KIRMIZIYA BASMA!",
+          text = com.example.util.LocalizationManager.string("avoid_red"),
           color = Color(0xFFF87171),
           fontSize = 13.sp,
           fontWeight = FontWeight.Black

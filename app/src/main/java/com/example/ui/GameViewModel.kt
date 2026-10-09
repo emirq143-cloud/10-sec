@@ -116,7 +116,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
   private val _selectedTab = MutableStateFlow(0) // 0: Home, 1: Games, 2: Leaderboard, 3: Profile
   val selectedTab: StateFlow<Int> = _selectedTab.asStateFlow()
 
-  private val _leaderboardTab = MutableStateFlow(1) // 0: Dünya, 1: Türkiye, 2: Arkadaşlar
+  private val _leaderboardTab = MutableStateFlow(0) // 0: Türkiye, 1: Dünya
   val leaderboardTab: StateFlow<Int> = _leaderboardTab.asStateFlow()
 
   private val _activeSession = MutableStateFlow<GamePlaySession?>(null)
@@ -295,8 +295,14 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     _leaderboardTab.value = index
   }
 
-  fun setUserName(name: String) {
-    repository.updateUserName(name)
+  fun setUserName(name: String): Boolean {
+    val validation = com.example.util.ProfanityFilter.validateNickname(name)
+    return if (validation is com.example.util.NicknameValidationResult.Valid) {
+      repository.updateUserName(name.trim())
+      true
+    } else {
+      false
+    }
   }
 
   fun signInWithGoogle(context: Context, onResult: (Boolean, String?) -> Unit) {
@@ -305,7 +311,10 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
       if (result.isSuccess) {
         val fbUser = result.getOrNull()
         if (fbUser != null && !fbUser.displayName.isNullOrBlank()) {
-          repository.updateUserName(fbUser.displayName!!)
+          val candidate = fbUser.displayName!!
+          if (!com.example.util.ProfanityFilter.containsProfanity(candidate)) {
+            repository.updateUserName(candidate)
+          }
         }
         submitScoreToCloud()
         onResult(true, null)
@@ -337,16 +346,18 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     val avatarId = profile.selectedAvatarId
 
     val brainScore = profile.overallBrainScore * 10 + profile.totalScore
+    val rawName = user.displayName?.takeIf { it.isNotBlank() } ?: profile.name
+    val cleanName = if (com.example.util.ProfanityFilter.containsProfanity(rawName)) "Oyuncu" else rawName
 
     _isSubmittingScore.value = true
     viewModelScope.launch {
       val result = leaderboardRepository.submitScore(
-        userName = user.displayName?.takeIf { it.isNotBlank() } ?: profile.name,
+        userName = cleanName,
         avatarId = avatarId,
         avatarEmoji = avatarEmoji,
         brainScore = brainScore,
         level = profile.level,
-        city = _selectedCity.value
+        city = "Türkiye"
       )
       _isSubmittingScore.value = false
       if (result.isSuccess) {
@@ -361,64 +372,60 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     }
   }
 
-  fun getLeaderboard(cityFilter: String? = null): List<LeaderboardEntry> {
+  fun getLeaderboard(tabIndex: Int = _leaderboardTab.value): List<LeaderboardEntry> {
     val user = userProfile.value
     val currentFbUser = currentUser.value
     val currentUid = currentFbUser?.uid
     val cloudEntries = cloudLeaderboard.value
 
-    if (currentFbUser != null && cloudEntries.isNotEmpty()) {
-      val filteredCloud = if (!cityFilter.isNullOrBlank() && cityFilter != "Tüm Türkiye") {
-        cloudEntries.filter { it.city.equals(cityFilter, ignoreCase = true) }
-      } else {
-        cloudEntries
-      }
-
-      val sorted = filteredCloud.sortedByDescending { it.brainScore }
-      var foundUser = false
-      val mapped = sorted.mapIndexed { index, entry ->
-        val isCurrent = entry.userId == currentUid
-        if (isCurrent) foundUser = true
-        LeaderboardEntry(
-          rank = index + 1,
-          name = entry.userName,
-          score = entry.brainScore,
-          avatarEmoji = entry.avatarEmoji,
-          isUser = isCurrent,
-          country = "TR",
-          city = entry.city,
-          userId = entry.userId,
-          league = League.fromScore(entry.brainScore)
-        )
-      }.toMutableList()
-
-      if (!foundUser) {
-        val userAvatarEmoji = avatars.value.find { it.id == user.selectedAvatarId }?.emoji ?: "🧑‍🚀"
-        val userScore = user.overallBrainScore * 10 + user.totalScore
-        mapped.add(
+    // Tab 0: TÜRKİYE
+    if (tabIndex == 0) {
+      if (currentFbUser != null && cloudEntries.isNotEmpty()) {
+        val sorted = cloudEntries.sortedByDescending { it.brainScore }
+        var foundUser = false
+        val mapped = sorted.mapIndexed { index, entry ->
+          val isCurrent = entry.userId == currentUid
+          if (isCurrent) foundUser = true
           LeaderboardEntry(
-            rank = mapped.size + 1,
-            name = "${user.name} (Sen)",
-            score = userScore,
-            avatarEmoji = userAvatarEmoji,
-            isUser = true,
+            rank = index + 1,
+            name = entry.userName,
+            score = entry.brainScore,
+            avatarEmoji = entry.avatarEmoji,
+            isUser = isCurrent,
             country = "TR",
-            city = _selectedCity.value,
-            userId = currentUid ?: "",
-            league = League.fromScore(userScore)
+            city = "Türkiye",
+            userId = entry.userId,
+            league = League.fromScore(entry.brainScore)
           )
-        )
+        }.toMutableList()
+
+        if (!foundUser) {
+          val userAvatarEmoji = avatars.value.find { it.id == user.selectedAvatarId }?.emoji ?: "🧑‍🚀"
+          val userScore = user.overallBrainScore * 10 + user.totalScore
+          mapped.add(
+            LeaderboardEntry(
+              rank = mapped.size + 1,
+              name = "${user.name} (Sen)",
+              score = userScore,
+              avatarEmoji = userAvatarEmoji,
+              isUser = true,
+              country = "TR",
+              city = "Türkiye",
+              userId = currentUid ?: "",
+              league = League.fromScore(userScore)
+            )
+          )
+        }
+
+        val reSorted = mapped.sortedByDescending { it.score }
+        return reSorted.mapIndexed { index, item -> item.copy(rank = index + 1) }
       }
-
-      val reSorted = mapped.sortedByDescending { it.score }
-      return reSorted.mapIndexed { index, item -> item.copy(rank = index + 1) }
+      // Offline / default pool for Turkey (tab 1 in repository)
+      return repository.getLeaderboard(1)
     }
 
-    val base = repository.getLeaderboard(_leaderboardTab.value)
-    if (!cityFilter.isNullOrBlank() && cityFilter != "Tüm Türkiye") {
-      return base.filter { it.city.equals(cityFilter, ignoreCase = true) || it.isUser }
-    }
-    return base
+    // Tab 1: DÜNYA (Global pool - tab 0 in repository)
+    return repository.getLeaderboard(0)
   }
 
   fun requestStartGame(gameType: GameType) {
