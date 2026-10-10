@@ -7,25 +7,41 @@ sealed class NicknameValidationResult {
 
 object ProfanityFilter {
 
-  // List of forbidden root words and insults in Turkish and English
-  private val forbiddenRoots = listOf(
-    // Turkish vulgarities & slurs
-    "amk", "aq", "amq", "amına", "amina", "amcik", "amcık", "amck", "amcuk",
-    "yarrak", "yarak", "yarram", "yarrag", "yarragim", "sik", "siki", "sikeyim",
-    "siktir", "siktirgit", "sikis", "sikiş", "sikik", "sokuk", "sokam",
-    "orospu", "orospucocugu", "orospucocu", "orospu cocugu", "orspu", "orosp",
-    "oc", "oç", "pic", "piç", "got", "göt", "gotlek", "götlek", "gotveren", "götveren",
-    "gavat", "kavat", "kahpe", "ibne", "ibnetor", "pust", "puşt", "fahise", "fahişe",
-    "dol", "döl", "tasak", "taşak", "tassak", "taşşak", "yavsak", "yavşak",
-    "pezevenk", "kaltak", "kevase", "kevaşe", "surtuk", "sürtük", "dalyarak",
-    "siktim", "sikerim", "amguard", "amci", "amcı", "got deli",
+  // Words that are forbidden as substrings anywhere (min 4 chars to prevent false positives)
+  private val forbiddenSubstrings = listOf(
+    // Ağır küfürler & cinsel içerikli argo
+    "amcik", "amcuk", "amck", "yarrak", "yarak", "yarram", "yarrag",
+    "siktir", "siktirgit", "sikis", "sikik", "sokuk", "sokam", "sikerim", "siktim",
+    "sikeyim", "sikecem", "sikem", "sikti", "soktu", "sokayim", "sokarlar",
+    "orospu", "orospucocugu", "orospucocu", "orspu", "dalyarak", "pezevenk",
+    "gotlek", "gotveren", "kaltak", "kevase", "surtuk", "fahise", "tasak", "tassak",
+    "yavsak", "gavat", "kavat", "kahpe", "ibnetor", "kasar", "amguard",
+    "aminakoy", "amkoyim", "aminkoyim", "aminakoyayim", "gotunu", "sikini", "tasagini",
+    "yarakkafa", "gotos", "porno", "hentai", "gotdeligi", "gotkili",
 
-    // Common abbreviations
-    "sg", "o.c", "o.ç", "a.m.k", "a.q",
+    // Hakaret ve aşağılayıcı kelimeler (kullanıcı talebi: salak, aptal, argo kelimeler genişletildi)
+    "salak", "aptal", "gerizekali", "dangalak", "ahmak", "enayi", "mankafa",
+    "beyinsiz", "moron", "embesil", "angut", "keriz", "serefsiz", "namussuz",
+    "haysiyetsiz", "alcak", "zibidi", "zuppe", "lavuk", "dingil", "kopeksoyu",
+    "itinoglu", "hayvanoglu", "suratsiz", "pislik", "suruntu", "yalaka", "cirkin",
+    "ahraz", "davar", "kereste", "teneke",
 
-    // English bad words
-    "fuck", "fucker", "fucking", "shit", "bitch", "asshole", "cunt",
-    "bastard", "dick", "pussy", "nigger", "nigga", "faggot", "slut", "whore"
+    // English slurs & profanities
+    "fuck", "fucker", "fucking", "motherfucker", "bitch", "asshole", "cunt",
+    "bastard", "nigger", "nigga", "faggot", "slut", "whore", "dumbass", "retard"
+  )
+
+  // Short words / acronyms forbidden as standalone words/tokens
+  // (Prevents false positives on names like 'Kemal', 'Cemal', 'Aslan', 'Bora', 'Hitit')
+  private val forbiddenExactWords = listOf(
+    // Kısa küfür & kısaltmalar
+    "amk", "aq", "amq", "oc", "pic", "got", "dol", "sg", "it",
+    "mal", "okuz", "hiyar", "ibne", "pust", "sik", "amina",
+    "puşt", "piç", "göt", "döl", "öc", "oç", "bok", "çüş",
+    "kazma", "odun", "cacik", "hirt", "ezik",
+
+    // İngilizce kısa küfürler
+    "dick", "pussy", "shit", "sex", "cum", "cock", "tits", "boobs", "ass", "idiot"
   )
 
   /**
@@ -54,6 +70,7 @@ object ProfanityFilter {
       .replace('5', 's')
       .replace('7', 't')
       .replace('8', 'b')
+      .replace('2', 'z')
       .replace('@', 'a')
       .replace('$', 's')
       .replace('!', 'i')
@@ -62,9 +79,9 @@ object ProfanityFilter {
   }
 
   /**
-   * Collapses repeating consecutive characters (e.g. "siiiikkk" -> "sik").
+   * Collapses repeating consecutive characters (e.g. "saalaakkk" -> "salak").
    */
-  private fun collapseRepeatedLetters(input: String): String {
+  fun collapseRepeatedLetters(input: String): String {
     if (input.isEmpty()) return ""
     val sb = StringBuilder()
     var lastChar = input[0]
@@ -86,30 +103,39 @@ object ProfanityFilter {
     if (rawText.isBlank()) return false
 
     val normalized = normalizeText(rawText)
-    // Strip all non-alphanumeric characters (spaces, underscores, dots, hyphens)
+    // Strip non-letter chars for substring checks
     val alphanumericOnly = normalized.filter { it.isLetter() }
-    val collapsed = collapseRepeatedLetters(alphanumericOnly)
+    val collapsedAlpha = collapseRepeatedLetters(alphanumericOnly)
 
-    // 1. Direct word check against tokens separated by spaces or punctuation
-    val words = normalized.split(Regex("[^a-z]+")).filter { it.isNotBlank() }
-    for (word in words) {
-      val collapsedWord = collapseRepeatedLetters(word)
-      for (forbidden in forbiddenRoots) {
-        if (word == forbidden || collapsedWord == forbidden) {
+    // Tokenized words (split by spaces, underscores, numbers, symbols)
+    val tokens = normalized.split(Regex("[^a-z]+")).filter { it.isNotBlank() }
+
+    // 1. Check exact forbidden words against tokens
+    for (token in tokens) {
+      val collapsedToken = collapseRepeatedLetters(token)
+      for (exact in forbiddenExactWords) {
+        if (token == exact || collapsedToken == exact) {
+          return true
+        }
+      }
+      for (sub in forbiddenSubstrings) {
+        if (token == sub || collapsedToken == sub) {
           return true
         }
       }
     }
 
-    // 2. Substring check on the stripped and collapsed string
-    for (forbidden in forbiddenRoots) {
-      // For short words (2-3 chars), check exact matches or word boundary to prevent false positives (e.g. "oc", "sg")
-      if (forbidden.length <= 2) {
-        if (words.contains(forbidden)) return true
-      } else {
-        if (alphanumericOnly.contains(forbidden) || collapsed.contains(forbidden)) {
-          return true
-        }
+    // 2. Check whole stripped string against forbidden exact words (catches "s.i.k", "a.m.k", "o.ç", "p.i.ç")
+    for (exact in forbiddenExactWords) {
+      if (alphanumericOnly == exact || collapsedAlpha == exact) {
+        return true
+      }
+    }
+
+    // 3. Check forbidden substrings against alphanumeric and collapsed streams
+    for (sub in forbiddenSubstrings) {
+      if (alphanumericOnly.contains(sub) || collapsedAlpha.contains(sub)) {
+        return true
       }
     }
 
@@ -131,7 +157,7 @@ object ProfanityFilter {
       return NicknameValidationResult.Invalid("Takma ad en fazla 16 karakter olabilir.")
     }
     if (containsProfanity(trimmed)) {
-      return NicknameValidationResult.Invalid("Uygunsuz veya küfürlü kelimeler kullanılamaz!")
+      return NicknameValidationResult.Invalid("Uygunsuz, argo veya küfürlü kelimeler kullanılamaz!")
     }
     return NicknameValidationResult.Valid
   }

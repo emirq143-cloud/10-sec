@@ -1,10 +1,12 @@
 package com.example.data.repository
 
 import android.content.Context
+import android.util.Log
 import com.example.R
 import com.example.data.model.FirestoreLeaderboardEntry
 import com.example.util.OperationType
 import com.example.util.handleFirestoreError
+import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldValue
@@ -12,22 +14,48 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.snapshots
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.tasks.await
 
 class LeaderboardRepository(
-  private val db: FirebaseFirestore,
-  private val auth: FirebaseAuth = FirebaseAuth.getInstance()
+  private val db: FirebaseFirestore?,
+  private val auth: FirebaseAuth? = null
 ) {
   constructor(context: Context) : this(
-    FirebaseFirestore.getInstance(
-      context.applicationContext.getString(R.string.firestore_database_id)
-    ),
-    FirebaseAuth.getInstance()
+    try {
+      val appContext = context.applicationContext
+      if (FirebaseApp.getApps(appContext).isEmpty()) {
+        FirebaseApp.initializeApp(appContext)
+      }
+      val dbId = try {
+        appContext.getString(R.string.firestore_database_id)
+      } catch (e: Exception) {
+        ""
+      }
+      if (dbId.isNotBlank() && dbId != "(default)") {
+        FirebaseFirestore.getInstance(FirebaseApp.getInstance(), dbId)
+      } else {
+        FirebaseFirestore.getInstance()
+      }
+    } catch (e: Throwable) {
+      Log.w("LeaderboardRepository", "Firestore not available: ${e.message}")
+      null
+    },
+    try {
+      val appContext = context.applicationContext
+      if (FirebaseApp.getApps(appContext).isEmpty()) {
+        FirebaseApp.initializeApp(appContext)
+      }
+      FirebaseAuth.getInstance()
+    } catch (e: Throwable) {
+      Log.w("LeaderboardRepository", "FirebaseAuth not available: ${e.message}")
+      null
+    }
   )
 
   fun requireUserId(): String {
-    return auth.currentUser?.uid ?: error("Kullanıcı giriş yapmamış.")
+    return auth?.currentUser?.uid ?: error("Kullanıcı giriş yapmamış.")
   }
 
   suspend fun submitScore(
@@ -38,6 +66,7 @@ class LeaderboardRepository(
     level: Int,
     city: String
   ): Result<Unit> {
+    val database = db ?: return Result.failure(IllegalStateException("Bulut veritabanı hazır değil"))
     val uid = try {
       requireUserId()
     } catch (e: Exception) {
@@ -57,7 +86,7 @@ class LeaderboardRepository(
         "updatedAt" to FieldValue.serverTimestamp()
       )
 
-      db.collection("leaderboard").document(uid).set(payload).await()
+      database.collection("leaderboard").document(uid).set(payload).await()
       Result.success(Unit)
     } catch (e: Exception) {
       handleFirestoreError(e, OperationType.WRITE, path)
@@ -66,7 +95,8 @@ class LeaderboardRepository(
   }
 
   fun observeTopLeaderboard(limit: Long = 50): Flow<List<FirestoreLeaderboardEntry>> {
-    return db.collection("leaderboard")
+    val database = db ?: return emptyFlow()
+    return database.collection("leaderboard")
       .orderBy("brainScore", Query.Direction.DESCENDING)
       .limit(limit)
       .snapshots()
@@ -96,7 +126,8 @@ class LeaderboardRepository(
   }
 
   fun observeUserEntry(userId: String): Flow<FirestoreLeaderboardEntry?> {
-    return db.collection("leaderboard").document(userId)
+    val database = db ?: return emptyFlow()
+    return database.collection("leaderboard").document(userId)
       .snapshots()
       .map { doc ->
         if (!doc.exists()) return@map null

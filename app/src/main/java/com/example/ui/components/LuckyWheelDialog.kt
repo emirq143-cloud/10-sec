@@ -450,11 +450,42 @@ fun LuckyWheelDialog(
                 ) {
                   Text(text = wonReward!!.icon, fontSize = 22.sp)
                   Text(
-                    text = "${wonReward!!.label} Kazandın!",
+                    text = "${wonReward!!.label} Açıldı!",
                     color = Color(0xFF1E1B4B),
                     fontSize = 15.sp,
                     fontWeight = FontWeight.ExtraBold
                   )
+                }
+                // Reward details (Coins & XP breakdown)
+                Row(
+                  verticalAlignment = Alignment.CenterVertically,
+                  horizontalArrangement = Arrangement.spacedBy(8.dp),
+                  modifier = Modifier.padding(top = 4.dp)
+                ) {
+                  if (wonReward!!.coins > 0) {
+                    Text(
+                      text = "+${wonReward!!.coins} 🪙 Altın",
+                      color = Color(0xFFB45309),
+                      fontSize = 13.sp,
+                      fontWeight = FontWeight.Bold
+                    )
+                  }
+                  if (wonReward!!.coins > 0 && wonReward!!.xp > 0) {
+                    Text(
+                      text = "•",
+                      color = Color(0xFF94A3B8),
+                      fontSize = 12.sp,
+                      fontWeight = FontWeight.Bold
+                    )
+                  }
+                  if (wonReward!!.xp > 0) {
+                    Text(
+                      text = "+${wonReward!!.xp} ⚡ XP",
+                      color = Color(0xFF1D4ED8),
+                      fontSize = 13.sp,
+                      fontWeight = FontWeight.Bold
+                    )
+                  }
                 }
               }
             }

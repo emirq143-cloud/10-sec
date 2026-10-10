@@ -132,10 +132,15 @@ class GameRepository(context: Context) {
       selectedAvatarId = savedSelectedAvatar,
       gamesWon = prefs.getInt("user_games_won", 27),
       gamesPlayed = prefs.getInt("user_games_played", 31),
-      brainMemoryScore = 87,
-      brainReflexScore = 92,
-      brainAttentionScore = 74,
-      brainLogicScore = 89,
+      brainMemoryScore = prefs.getInt("user_memory_score", 87),
+      brainReflexScore = prefs.getInt("user_reflex_score", 92),
+      brainAttentionScore = prefs.getInt("user_attention_score", 74),
+      brainLogicScore = prefs.getInt("user_logic_score", 89),
+      avgReactionTimeMs = prefs.getInt("user_avg_reaction", 278),
+      bestReactionTimeMs = prefs.getInt("user_best_reaction", 194),
+      soundEnabled = prefs.getBoolean("user_sound_enabled", true),
+      vibrationEnabled = prefs.getBoolean("user_vibration_enabled", true),
+      luckySpinsCount = prefs.getInt("user_lucky_spins", 1),
       hasSpunWheelToday = (savedLastWheelDate == getTodayDateString()),
       lastWheelSpinDate = savedLastWheelDate
     )
@@ -154,11 +159,38 @@ class GameRepository(context: Context) {
   val avatars: StateFlow<List<AvatarItem>> = _avatars.asStateFlow()
 
   private val _dailyMissions = MutableStateFlow(
-    listOf(
-      DailyMission("m1", "5 mini oyun kazan", 5, 3, 200, false),
-      DailyMission("m2", "3 refleks oyunu tamamla", 3, 1, 300, false),
-      DailyMission("m3", "10 seri yap", 10, 4, 500, false)
-    )
+    run {
+      val today = getTodayDateString()
+      val savedMissionsDate = prefs.getString("missions_saved_date", "")
+      val isSameDay = (savedMissionsDate == today)
+
+      listOf(
+        DailyMission(
+          id = "m1",
+          title = "5 mini oyun kazan",
+          target = 5,
+          current = if (isSameDay) prefs.getInt("mission_m1_curr", 0) else 0,
+          xpReward = 200,
+          isClaimed = if (isSameDay) prefs.getBoolean("mission_m1_claimed", false) else false
+        ),
+        DailyMission(
+          id = "m2",
+          title = "3 refleks oyunu tamamla",
+          target = 3,
+          current = if (isSameDay) prefs.getInt("mission_m2_curr", 0) else 0,
+          xpReward = 300,
+          isClaimed = if (isSameDay) prefs.getBoolean("mission_m2_claimed", false) else false
+        ),
+        DailyMission(
+          id = "m3",
+          title = "10 seri yap",
+          target = 10,
+          current = if (isSameDay) prefs.getInt("mission_m3_curr", 0) else 0,
+          xpReward = 500,
+          isClaimed = if (isSameDay) prefs.getBoolean("mission_m3_claimed", false) else false
+        )
+      )
+    }
   )
   val dailyMissions: StateFlow<List<DailyMission>> = _dailyMissions.asStateFlow()
 
@@ -183,7 +215,10 @@ class GameRepository(context: Context) {
 
   private fun persistUserData() {
     val u = _userProfile.value
-    prefs.edit()
+    val missions = _dailyMissions.value
+    val today = getTodayDateString()
+
+    val editor = prefs.edit()
       .putInt("user_coins", u.coins)
       .putString("selected_avatar", u.selectedAvatarId)
       .putString("last_wheel_date", u.lastWheelSpinDate)
@@ -196,8 +231,29 @@ class GameRepository(context: Context) {
       .putInt("user_max_streak", u.maxStreak)
       .putInt("user_games_won", u.gamesWon)
       .putInt("user_games_played", u.gamesPlayed)
+      .putInt("user_memory_score", u.brainMemoryScore)
+      .putInt("user_reflex_score", u.brainReflexScore)
+      .putInt("user_attention_score", u.brainAttentionScore)
+      .putInt("user_logic_score", u.brainLogicScore)
+      .putInt("user_avg_reaction", u.avgReactionTimeMs)
+      .putInt("user_best_reaction", u.bestReactionTimeMs)
+      .putBoolean("user_sound_enabled", u.soundEnabled)
+      .putBoolean("user_vibration_enabled", u.vibrationEnabled)
+      .putInt("user_lucky_spins", u.luckySpinsCount)
       .putStringSet("unlocked_avatars", savedUnlockedIds)
-      .apply()
+      .putString("missions_saved_date", today)
+
+    missions.find { it.id == "m1" }?.let {
+      editor.putInt("mission_m1_curr", it.current).putBoolean("mission_m1_claimed", it.isClaimed)
+    }
+    missions.find { it.id == "m2" }?.let {
+      editor.putInt("mission_m2_curr", it.current).putBoolean("mission_m2_claimed", it.isClaimed)
+    }
+    missions.find { it.id == "m3" }?.let {
+      editor.putInt("mission_m3_curr", it.current).putBoolean("mission_m3_claimed", it.isClaimed)
+    }
+
+    editor.apply()
   }
 
   fun updateUserName(newName: String) {
@@ -209,10 +265,12 @@ class GameRepository(context: Context) {
 
   fun toggleSound(enabled: Boolean) {
     _userProfile.update { it.copy(soundEnabled = enabled) }
+    persistUserData()
   }
 
   fun toggleVibration(enabled: Boolean) {
     _userProfile.update { it.copy(vibrationEnabled = enabled) }
+    persistUserData()
   }
 
   fun claimLuckyWheel(coins: Int, xp: Int) {
@@ -264,6 +322,7 @@ class GameRepository(context: Context) {
 
   fun grantExtraSpin() {
     _userProfile.update { it.copy(hasSpunWheelToday = false, luckySpinsCount = it.luckySpinsCount + 1) }
+    persistUserData()
   }
 
   fun recordReactionTime(ms: Int) {
@@ -277,6 +336,7 @@ class GameRepository(context: Context) {
         reactionHistory = newHistory
       )
     }
+    persistUserData()
   }
 
   fun recordGameResult(
@@ -425,7 +485,8 @@ class GameRepository(context: Context) {
 
     val basePool = when (tabIndex) {
       0 -> competitorsGlobal
-      else -> competitorsTurkey
+      1 -> competitorsTurkey
+      else -> competitorsFriends
     }
 
     // Merge online pool with current user's real live score!

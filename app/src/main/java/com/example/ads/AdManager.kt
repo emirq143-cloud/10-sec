@@ -2,6 +2,8 @@ package com.example.ads
 
 import android.app.Activity
 import android.content.Context
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import com.example.ui.components.AdRewardType
 import com.google.android.gms.ads.AdError
@@ -15,9 +17,6 @@ import com.google.android.gms.ads.rewarded.RewardedAd
 import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback
 import com.google.android.gms.ads.rewardedinterstitial.RewardedInterstitialAd
 import com.google.android.gms.ads.rewardedinterstitial.RewardedInterstitialAdLoadCallback
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 
 object AdManager {
   private const val TAG = "AdManager"
@@ -35,13 +34,33 @@ object AdManager {
   private var isRewardedInterstitialLoading = false
   private var isInterstitialLoading = false
 
+  private val mainHandler = Handler(Looper.getMainLooper())
+
+  private fun runOnMainThread(action: () -> Unit) {
+    if (Looper.myLooper() == Looper.getMainLooper()) {
+      try {
+        action()
+      } catch (e: Throwable) {
+        Log.w(TAG, "Main thread action notice: ${e.message}")
+      }
+    } else {
+      mainHandler.post {
+        try {
+          action()
+        } catch (e: Throwable) {
+          Log.w(TAG, "Main thread post notice: ${e.message}")
+        }
+      }
+    }
+  }
+
   /**
-   * Initialize Google Mobile Ads SDK
+   * Initialize Google Mobile Ads SDK safely
    */
   fun initialize(context: Context) {
     if (isInitialized) return
     val appContext = context.applicationContext
-    CoroutineScope(Dispatchers.IO).launch {
+    runOnMainThread {
       try {
         MobileAds.initialize(appContext) { status ->
           isInitialized = true
@@ -64,84 +83,108 @@ object AdManager {
    * Load Rewarded Ad (Ek süre / Ödüllü Reklam)
    */
   fun loadRewardedAd(context: Context) {
-    if (rewardedAd != null || isRewardedLoading) return
-    isRewardedLoading = true
+    runOnMainThread {
+      if (rewardedAd != null || isRewardedLoading) return@runOnMainThread
+      isRewardedLoading = true
 
-    val adRequest = AdRequest.Builder().build()
-    RewardedAd.load(
-      context,
-      REWARDED_AD_UNIT_ID,
-      adRequest,
-      object : RewardedAdLoadCallback() {
-        override fun onAdLoaded(ad: RewardedAd) {
-          rewardedAd = ad
-          isRewardedLoading = false
-          Log.d(TAG, "Rewarded ad successfully loaded ($REWARDED_AD_UNIT_ID)")
-        }
+      try {
+        val adRequest = AdRequest.Builder().build()
+        RewardedAd.load(
+          context,
+          REWARDED_AD_UNIT_ID,
+          adRequest,
+          object : RewardedAdLoadCallback() {
+            override fun onAdLoaded(ad: RewardedAd) {
+              rewardedAd = ad
+              isRewardedLoading = false
+              Log.d(TAG, "Rewarded ad successfully loaded ($REWARDED_AD_UNIT_ID)")
+            }
 
-        override fun onAdFailedToLoad(error: LoadAdError) {
-          rewardedAd = null
-          isRewardedLoading = false
-          Log.w(TAG, "Rewarded ad failed to load: ${error.message} (code: ${error.code})")
-        }
+            override fun onAdFailedToLoad(error: LoadAdError) {
+              rewardedAd = null
+              isRewardedLoading = false
+              Log.w(TAG, "Rewarded ad failed to load: ${error.message} (code: ${error.code})")
+            }
+          }
+        )
+      } catch (e: Throwable) {
+        rewardedAd = null
+        isRewardedLoading = false
+        Log.w(TAG, "loadRewardedAd exception: ${e.message}")
       }
-    )
+    }
   }
 
   /**
    * Load Rewarded Interstitial Ad (Ödüllü Geçiş Reklamı)
    */
   fun loadRewardedInterstitialAd(context: Context) {
-    if (rewardedInterstitialAd != null || isRewardedInterstitialLoading) return
-    isRewardedInterstitialLoading = true
+    runOnMainThread {
+      if (rewardedInterstitialAd != null || isRewardedInterstitialLoading) return@runOnMainThread
+      isRewardedInterstitialLoading = true
 
-    val adRequest = AdRequest.Builder().build()
-    RewardedInterstitialAd.load(
-      context,
-      REWARDED_INTERSTITIAL_AD_UNIT_ID,
-      adRequest,
-      object : RewardedInterstitialAdLoadCallback() {
-        override fun onAdLoaded(ad: RewardedInterstitialAd) {
-          rewardedInterstitialAd = ad
-          isRewardedInterstitialLoading = false
-          Log.d(TAG, "Rewarded Interstitial ad loaded ($REWARDED_INTERSTITIAL_AD_UNIT_ID)")
-        }
+      try {
+        val adRequest = AdRequest.Builder().build()
+        RewardedInterstitialAd.load(
+          context,
+          REWARDED_INTERSTITIAL_AD_UNIT_ID,
+          adRequest,
+          object : RewardedInterstitialAdLoadCallback() {
+            override fun onAdLoaded(ad: RewardedInterstitialAd) {
+              rewardedInterstitialAd = ad
+              isRewardedInterstitialLoading = false
+              Log.d(TAG, "Rewarded Interstitial ad loaded ($REWARDED_INTERSTITIAL_AD_UNIT_ID)")
+            }
 
-        override fun onAdFailedToLoad(error: LoadAdError) {
-          rewardedInterstitialAd = null
-          isRewardedInterstitialLoading = false
-          Log.w(TAG, "Rewarded Interstitial ad failed to load: ${error.message}")
-        }
+            override fun onAdFailedToLoad(error: LoadAdError) {
+              rewardedInterstitialAd = null
+              isRewardedInterstitialLoading = false
+              Log.w(TAG, "Rewarded Interstitial ad failed to load: ${error.message}")
+            }
+          }
+        )
+      } catch (e: Throwable) {
+        rewardedInterstitialAd = null
+        isRewardedInterstitialLoading = false
+        Log.w(TAG, "loadRewardedInterstitialAd exception: ${e.message}")
       }
-    )
+    }
   }
 
   /**
    * In case unit is configured as standard Interstitial
    */
   fun loadInterstitialAd(context: Context) {
-    if (interstitialAd != null || isInterstitialLoading) return
-    isInterstitialLoading = true
+    runOnMainThread {
+      if (interstitialAd != null || isInterstitialLoading) return@runOnMainThread
+      isInterstitialLoading = true
 
-    val adRequest = AdRequest.Builder().build()
-    InterstitialAd.load(
-      context,
-      REWARDED_INTERSTITIAL_AD_UNIT_ID,
-      adRequest,
-      object : InterstitialAdLoadCallback() {
-        override fun onAdLoaded(ad: InterstitialAd) {
-          interstitialAd = ad
-          isInterstitialLoading = false
-          Log.d(TAG, "Interstitial ad loaded ($REWARDED_INTERSTITIAL_AD_UNIT_ID)")
-        }
+      try {
+        val adRequest = AdRequest.Builder().build()
+        InterstitialAd.load(
+          context,
+          REWARDED_INTERSTITIAL_AD_UNIT_ID,
+          adRequest,
+          object : InterstitialAdLoadCallback() {
+            override fun onAdLoaded(ad: InterstitialAd) {
+              interstitialAd = ad
+              isInterstitialLoading = false
+              Log.d(TAG, "Interstitial ad loaded ($REWARDED_INTERSTITIAL_AD_UNIT_ID)")
+            }
 
-        override fun onAdFailedToLoad(error: LoadAdError) {
-          interstitialAd = null
-          isInterstitialLoading = false
-          Log.w(TAG, "Interstitial ad failed to load: ${error.message}")
-        }
+            override fun onAdFailedToLoad(error: LoadAdError) {
+              interstitialAd = null
+              isInterstitialLoading = false
+              Log.w(TAG, "Interstitial ad failed to load: ${error.message}")
+            }
+          }
+        )
+      } catch (e: Throwable) {
+        interstitialAd = null
+        isInterstitialLoading = false
+        Log.w(TAG, "loadInterstitialAd exception: ${e.message}")
       }
-    )
+    }
   }
 
   /**
@@ -155,23 +198,30 @@ object AdManager {
     onFallback: () -> Unit
   ) {
     val ad = rewardedAd
-    if (activity != null && ad != null) {
-      ad.fullScreenContentCallback = object : FullScreenContentCallback() {
-        override fun onAdDismissedFullScreenContent() {
-          rewardedAd = null
-          loadRewardedAd(activity)
+    if (activity != null && !activity.isFinishing && ad != null) {
+      try {
+        ad.fullScreenContentCallback = object : FullScreenContentCallback() {
+          override fun onAdDismissedFullScreenContent() {
+            rewardedAd = null
+            loadRewardedAd(activity)
+          }
+
+          override fun onAdFailedToShowFullScreenContent(adError: AdError) {
+            rewardedAd = null
+            loadRewardedAd(activity)
+            onFallback()
+          }
         }
 
-        override fun onAdFailedToShowFullScreenContent(adError: AdError) {
-          rewardedAd = null
-          loadRewardedAd(activity)
-          onFallback()
+        ad.show(activity) { rewardItem ->
+          Log.d(TAG, "User earned reward: ${rewardItem.type} amount=${rewardItem.amount}")
+          onRewardEarned()
         }
-      }
-
-      ad.show(activity) { rewardItem ->
-        Log.d(TAG, "User earned reward: ${rewardItem.type} amount=${rewardItem.amount}")
-        onRewardEarned()
+      } catch (e: Throwable) {
+        Log.w(TAG, "showRewardedAd exception: ${e.message}")
+        rewardedAd = null
+        loadRewardedAd(activity)
+        onFallback()
       }
     } else {
       Log.d(TAG, "Rewarded ad not ready yet, using test fallback")
@@ -187,7 +237,7 @@ object AdManager {
     activity: Activity?,
     onCompleted: () -> Unit
   ) {
-    if (activity == null) {
+    if (activity == null || activity.isFinishing) {
       onCompleted()
       return
     }
@@ -195,46 +245,56 @@ object AdManager {
     // Try Rewarded Interstitial first
     val rwIntAd = rewardedInterstitialAd
     if (rwIntAd != null) {
-      rwIntAd.fullScreenContentCallback = object : FullScreenContentCallback() {
-        override fun onAdDismissedFullScreenContent() {
-          rewardedInterstitialAd = null
-          loadRewardedInterstitialAd(activity)
-          onCompleted()
-        }
+      try {
+        rwIntAd.fullScreenContentCallback = object : FullScreenContentCallback() {
+          override fun onAdDismissedFullScreenContent() {
+            rewardedInterstitialAd = null
+            loadRewardedInterstitialAd(activity)
+            onCompleted()
+          }
 
-        override fun onAdFailedToShowFullScreenContent(adError: AdError) {
-          rewardedInterstitialAd = null
-          loadRewardedInterstitialAd(activity)
-          onCompleted()
+          override fun onAdFailedToShowFullScreenContent(adError: AdError) {
+            rewardedInterstitialAd = null
+            loadRewardedInterstitialAd(activity)
+            onCompleted()
+          }
         }
+        rwIntAd.show(activity) { rewardItem ->
+          Log.d(TAG, "Transition reward earned: ${rewardItem.type}")
+        }
+        return
+      } catch (e: Throwable) {
+        Log.w(TAG, "showTransitionAd rwIntAd exception: ${e.message}")
+        rewardedInterstitialAd = null
       }
-      rwIntAd.show(activity) { rewardItem ->
-        Log.d(TAG, "Transition reward earned: ${rewardItem.type}")
-      }
-      return
     }
 
     // Try regular Interstitial if loaded
     val intAd = interstitialAd
     if (intAd != null) {
-      intAd.fullScreenContentCallback = object : FullScreenContentCallback() {
-        override fun onAdDismissedFullScreenContent() {
-          interstitialAd = null
-          loadInterstitialAd(activity)
-          onCompleted()
-        }
+      try {
+        intAd.fullScreenContentCallback = object : FullScreenContentCallback() {
+          override fun onAdDismissedFullScreenContent() {
+            interstitialAd = null
+            loadInterstitialAd(activity)
+            onCompleted()
+          }
 
-        override fun onAdFailedToShowFullScreenContent(adError: AdError) {
-          interstitialAd = null
-          loadInterstitialAd(activity)
-          onCompleted()
+          override fun onAdFailedToShowFullScreenContent(adError: AdError) {
+            interstitialAd = null
+            loadInterstitialAd(activity)
+            onCompleted()
+          }
         }
+        intAd.show(activity)
+        return
+      } catch (e: Throwable) {
+        Log.w(TAG, "showTransitionAd intAd exception: ${e.message}")
+        interstitialAd = null
       }
-      intAd.show(activity)
-      return
     }
 
-    // If neither is ready, reload and proceed immediately without blocking user
+    // If neither is ready or show failed, reload and proceed immediately without blocking user
     loadRewardedInterstitialAd(activity)
     loadInterstitialAd(activity)
     onCompleted()
