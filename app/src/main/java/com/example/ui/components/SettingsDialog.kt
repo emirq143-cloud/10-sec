@@ -1,6 +1,5 @@
 package com.example.ui.components
 
-import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -18,7 +17,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.PrivacyTip
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Vibration
@@ -29,25 +27,21 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.ui.theme.BluePrimary
 import com.example.ui.theme.CardWhite
 import com.example.ui.theme.SkyBlueAccent
 import com.example.ui.theme.TextDark
 import com.example.ui.theme.TextDarkMuted
 import com.example.ui.theme.TextDarkSecondary
-import com.example.util.AppLanguage
 import com.example.util.LocalizationManager
 
 @Composable
@@ -59,9 +53,6 @@ fun SettingsDialog(
   onOpenPrivacyPolicy: () -> Unit,
   onDismiss: () -> Unit
 ) {
-  val context = LocalContext.current
-  val currentLang by LocalizationManager.currentLanguage.collectAsStateWithLifecycle()
-
   Dialog(onDismissRequest = onDismiss) {
     Box(
       modifier = Modifier
@@ -118,7 +109,7 @@ fun SettingsDialog(
           SettingToggleItem(
             icon = Icons.Default.VolumeUp,
             title = LocalizationManager.string("sound_fx"),
-            subtitle = if (currentLang == AppLanguage.TR) "Tuş sesleri, zafer fanfare'i ve geri sayım" else "Game sounds, fanfares and countdowns",
+            subtitle = "Tuş sesleri, zafer fanfare'i ve geri sayım",
             checked = soundEnabled,
             onCheckedChange = onToggleSound
           )
@@ -127,80 +118,10 @@ fun SettingsDialog(
           SettingToggleItem(
             icon = Icons.Default.Vibration,
             title = LocalizationManager.string("haptic_vibration"),
-            subtitle = if (currentLang == AppLanguage.TR) "Başarılı ve hatalı dokunuş geri bildirimleri" else "Tactile response on taps and mistakes",
+            subtitle = "Başarılı ve hatalı dokunuş geri bildirimleri",
             checked = vibrationEnabled,
             onCheckedChange = onToggleVibration
           )
-
-          // Language Selector
-          Box(
-            modifier = Modifier
-              .fillMaxWidth()
-              .clip(RoundedCornerShape(16.dp))
-              .background(Color(0xFFF8FAFC))
-              .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(16.dp))
-              .padding(horizontal = 14.dp, vertical = 10.dp)
-          ) {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-              Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-              ) {
-                Icon(Icons.Default.Language, contentDescription = null, tint = BluePrimary, modifier = Modifier.size(22.dp))
-                Column {
-                  Text(
-                    text = LocalizationManager.string("language"),
-                    color = TextDark,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold
-                  )
-                  Text(
-                    text = "${currentLang.flag} ${currentLang.displayName}",
-                    color = BluePrimary,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.SemiBold
-                  )
-                }
-              }
-
-              // Language options row
-              Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-              ) {
-                AppLanguage.values().forEach { lang ->
-                  val isSelected = currentLang == lang
-                  Box(
-                    modifier = Modifier
-                      .weight(1f)
-                      .clip(RoundedCornerShape(10.dp))
-                      .background(if (isSelected) BluePrimary else Color.White)
-                      .border(
-                        1.dp,
-                        if (isSelected) BluePrimary else Color(0xFFCBD5E1),
-                        RoundedCornerShape(10.dp)
-                      )
-                      .clickable { LocalizationManager.setLanguage(context, lang) }
-                      .padding(vertical = 6.dp),
-                    contentAlignment = Alignment.Center
-                  ) {
-                    Row(
-                      verticalAlignment = Alignment.CenterVertically,
-                      horizontalArrangement = Arrangement.spacedBy(3.dp)
-                    ) {
-                      Text(text = lang.flag, fontSize = 12.sp)
-                      Text(
-                        text = lang.code.uppercase(),
-                        color = if (isSelected) Color.White else TextDark,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold
-                      )
-                    }
-                  }
-                }
-              }
-            }
-          }
 
           // Privacy Policy button
           SettingClickableItem(
