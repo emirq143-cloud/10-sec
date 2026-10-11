@@ -22,6 +22,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.style.TextOverflow
 import com.example.ui.theme.NeonGold
 import com.example.ui.theme.NeonOrange
 
@@ -36,33 +37,39 @@ fun GameTopBar(
   Row(
     modifier = modifier
       .fillMaxWidth()
-      .padding(horizontal = 16.dp, vertical = 10.dp),
+      .padding(horizontal = 14.dp, vertical = 8.dp),
     verticalAlignment = Alignment.CenterVertically,
-    horizontalArrangement = Arrangement.SpaceBetween
+    horizontalArrangement = Arrangement.spacedBy(8.dp)
   ) {
     IconButton(
       onClick = onBack,
       modifier = Modifier
-        .size(42.dp)
+        .size(40.dp)
         .clip(CircleShape)
-        .background(Color.Black.copy(alpha = 0.35f))
+        .background(Color.Black.copy(alpha = 0.4f))
     ) {
       Icon(
         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
         contentDescription = "Geri",
-        tint = Color.White
+        tint = Color.White,
+        modifier = Modifier.size(20.dp)
       )
     }
 
     Row(
+      modifier = Modifier.weight(1f),
       verticalAlignment = Alignment.CenterVertically,
-      horizontalArrangement = Arrangement.spacedBy(8.dp)
+      horizontalArrangement = Arrangement.spacedBy(6.dp)
     ) {
       Text(
         text = title,
         color = Color.White,
-        fontSize = 19.sp,
-        fontWeight = FontWeight.ExtraBold
+        fontSize = 15.sp,
+        fontWeight = FontWeight.ExtraBold,
+        maxLines = 1,
+        softWrap = false,
+        overflow = TextOverflow.Ellipsis,
+        modifier = Modifier.weight(1f, fill = false)
       )
 
       if (isRiskMode) {
@@ -70,13 +77,15 @@ fun GameTopBar(
           modifier = Modifier
             .clip(RoundedCornerShape(8.dp))
             .background(NeonOrange)
-            .padding(horizontal = 8.dp, vertical = 3.dp)
+            .padding(horizontal = 6.dp, vertical = 2.dp)
         ) {
           Text(
             text = "3x RİSK",
             color = Color.White,
-            fontSize = 11.sp,
-            fontWeight = FontWeight.Black
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Black,
+            maxLines = 1,
+            softWrap = false
           )
         }
       }
@@ -84,21 +93,23 @@ fun GameTopBar(
 
     Box(
       modifier = Modifier
-        .clip(RoundedCornerShape(16.dp))
-        .background(Color.Black.copy(alpha = 0.35f))
-        .padding(horizontal = 12.dp, vertical = 6.dp),
+        .clip(RoundedCornerShape(14.dp))
+        .background(Color.Black.copy(alpha = 0.45f))
+        .padding(horizontal = 10.dp, vertical = 5.dp),
       contentAlignment = Alignment.Center
     ) {
       Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp)
+        horizontalArrangement = Arrangement.spacedBy(3.dp)
       ) {
-        Text(text = "🔥", fontSize = 14.sp)
+        Text(text = "🔥", fontSize = 13.sp)
         Text(
           text = "$streak Seri",
           color = NeonGold,
-          fontSize = 13.sp,
-          fontWeight = FontWeight.Bold
+          fontSize = 12.sp,
+          fontWeight = FontWeight.Bold,
+          maxLines = 1,
+          softWrap = false
         )
       }
     }

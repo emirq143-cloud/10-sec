@@ -19,10 +19,12 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.tasks.await
 
 class LeaderboardRepository(
-  private val db: FirebaseFirestore?,
-  private val auth: FirebaseAuth? = null
+  private val context: Context? = null,
+  private var db: FirebaseFirestore? = null,
+  private var auth: FirebaseAuth? = null
 ) {
   constructor(context: Context) : this(
+    context.applicationContext,
     try {
       val appContext = context.applicationContext
       if (FirebaseApp.getApps(appContext).isEmpty()) {
@@ -54,8 +56,45 @@ class LeaderboardRepository(
     }
   )
 
+  fun getDatabase(): FirebaseFirestore? {
+    if (db != null) return db
+    val appContext = context?.applicationContext
+    if (appContext != null && FirebaseApp.getApps(appContext).isEmpty()) {
+      try { FirebaseApp.initializeApp(appContext) } catch (_: Throwable) {}
+    }
+    return try {
+      val dbId = try {
+        appContext?.getString(R.string.firestore_database_id) ?: ""
+      } catch (_: Exception) { "" }
+      db = if (dbId.isNotBlank() && dbId != "(default)" && appContext != null && FirebaseApp.getApps(appContext).isNotEmpty()) {
+        FirebaseFirestore.getInstance(FirebaseApp.getInstance(), dbId)
+      } else {
+        FirebaseFirestore.getInstance()
+      }
+      db
+    } catch (e: Throwable) {
+      Log.w("LeaderboardRepository", "Firestore not available: ${e.message}")
+      null
+    }
+  }
+
+  fun getFirebaseAuth(): FirebaseAuth? {
+    if (auth != null) return auth
+    val appContext = context?.applicationContext
+    if (appContext != null && FirebaseApp.getApps(appContext).isEmpty()) {
+      try { FirebaseApp.initializeApp(appContext) } catch (_: Throwable) {}
+    }
+    return try {
+      auth = FirebaseAuth.getInstance()
+      auth
+    } catch (e: Throwable) {
+      Log.w("LeaderboardRepository", "FirebaseAuth not available: ${e.message}")
+      null
+    }
+  }
+
   fun requireUserId(): String {
-    return auth?.currentUser?.uid ?: error("Kullanıcı giriş yapmamış.")
+    return getFirebaseAuth()?.currentUser?.uid ?: error("Kullanıcı giriş yapmamış.")
   }
 
   suspend fun submitScore(
@@ -66,7 +105,7 @@ class LeaderboardRepository(
     level: Int,
     city: String
   ): Result<Unit> {
-    val database = db ?: return Result.failure(IllegalStateException("Bulut veritabanı hazır değil"))
+    val database = getDatabase() ?: return Result.failure(IllegalStateException("Bulut veritabanı hazır değil"))
     val uid = try {
       requireUserId()
     } catch (e: Exception) {
@@ -95,7 +134,7 @@ class LeaderboardRepository(
   }
 
   fun observeTopLeaderboard(limit: Long = 50): Flow<List<FirestoreLeaderboardEntry>> {
-    val database = db ?: return emptyFlow()
+    val database = getDatabase() ?: return emptyFlow()
     return database.collection("leaderboard")
       .orderBy("brainScore", Query.Direction.DESCENDING)
       .limit(limit)
@@ -126,7 +165,7 @@ class LeaderboardRepository(
   }
 
   fun observeUserEntry(userId: String): Flow<FirestoreLeaderboardEntry?> {
-    val database = db ?: return emptyFlow()
+    val database = getDatabase() ?: return emptyFlow()
     return database.collection("leaderboard").document(userId)
       .snapshots()
       .map { doc ->

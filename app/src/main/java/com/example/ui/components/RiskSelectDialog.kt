@@ -90,7 +90,7 @@ fun RiskSelectDialog(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
           ) {
-            Column {
+            Column(modifier = Modifier.weight(1f)) {
               Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(text = "🛡️", fontSize = 18.sp)
                 Spacer(modifier = Modifier.padding(3.dp))
@@ -139,7 +139,7 @@ fun RiskSelectDialog(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
           ) {
-            Column {
+            Column(modifier = Modifier.weight(1f)) {
               Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(text = "🔥", fontSize = 18.sp)
                 Spacer(modifier = Modifier.padding(3.dp))

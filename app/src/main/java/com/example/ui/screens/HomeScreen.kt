@@ -202,7 +202,7 @@ fun HomeScreen(
           Box(
             modifier = Modifier
               .weight(1f)
-              .shadow(10.dp, RoundedCornerShape(20.dp), spotColor = NeonGold.copy(alpha = 0.5f))
+              .shadow(8.dp, RoundedCornerShape(20.dp), spotColor = NeonGold.copy(alpha = 0.4f))
               .clip(RoundedCornerShape(20.dp))
               .background(
                 Brush.linearGradient(
@@ -213,18 +213,18 @@ fun HomeScreen(
               .clickable { onOpenLuckyWheel() }
               .padding(14.dp)
           ) {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
               Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
                 modifier = Modifier.fillMaxWidth()
               ) {
-                Text(text = LocalizationManager.string("daily_wheel_title"), color = Color(0xFF78350F), fontSize = 14.sp, fontWeight = FontWeight.ExtraBold)
+                Text(text = "🎰", fontSize = 22.sp)
                 Box(
                   modifier = Modifier
                     .clip(CircleShape)
                     .background(if (!userProfile.hasSpunWheelToday) Color(0xFFDC2626) else Color(0xFF16A34A))
-                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                    .padding(horizontal = 7.dp, vertical = 2.dp)
                 ) {
                   Text(
                     text = if (!userProfile.hasSpunWheelToday) "HAZIR" else "✓",
@@ -235,17 +235,30 @@ fun HomeScreen(
                 }
               }
               Text(
-                text = if (!userProfile.hasSpunWheelToday) LocalizationManager.string("daily_wheel_ready") else LocalizationManager.string("daily_wheel_done"),
+                text = "Şans Çarkı",
+                color = Color(0xFF78350F),
+                fontSize = 15.sp,
+                fontWeight = FontWeight.ExtraBold,
+                maxLines = 1,
+                softWrap = false
+              )
+              Text(
+                text = if (!userProfile.hasSpunWheelToday) "Ücretsiz çevir!" else "Bugün çevrildi",
                 color = Color(0xFF92400E),
                 fontSize = 11.sp,
-                fontWeight = FontWeight.Medium
+                fontWeight = FontWeight.Medium,
+                maxLines = 1,
+                softWrap = false,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
               )
               Spacer(modifier = Modifier.height(2.dp))
               Text(
-                text = if (!userProfile.hasSpunWheelToday) LocalizationManager.string("spin_now") else LocalizationManager.string("details"),
+                text = if (!userProfile.hasSpunWheelToday) "ÇEVİR ➔" else "DETAY ➔",
                 color = Color(0xFFB45309),
                 fontSize = 11.sp,
-                fontWeight = FontWeight.Black
+                fontWeight = FontWeight.Black,
+                maxLines = 1,
+                softWrap = false
               )
             }
           }
@@ -261,22 +274,53 @@ fun HomeScreen(
               .clickable { onOpenReactionAnalytics() }
               .padding(14.dp)
           ) {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
               Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
                 modifier = Modifier.fillMaxWidth()
               ) {
-                Text(text = LocalizationManager.string("reaction_speed_title"), color = TextDark, fontSize = 14.sp, fontWeight = FontWeight.ExtraBold)
-                Text(text = "⏱️", fontSize = 18.sp)
+                Text(text = "⏱️", fontSize = 22.sp)
+                Box(
+                  modifier = Modifier
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(Color(0xFFE0F2FE))
+                    .padding(horizontal = 7.dp, vertical = 2.dp)
+                ) {
+                  Text(
+                    text = "${userProfile.avgReactionTimeMs} ms",
+                    color = BluePrimary,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    maxLines = 1,
+                    softWrap = false
+                  )
+                }
               }
-              Text(text = "${userProfile.avgReactionTimeMs} ms", color = BluePrimary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+              Text(
+                text = "Tepki Hızı",
+                color = TextDark,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.ExtraBold,
+                maxLines = 1,
+                softWrap = false
+              )
+              Text(
+                text = "Refleks analizi",
+                color = TextDarkSecondary,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Medium,
+                maxLines = 1,
+                softWrap = false
+              )
               Spacer(modifier = Modifier.height(2.dp))
               Text(
-                text = LocalizationManager.string("reaction_analysis_btn"),
+                text = "GÖZ AT ➔",
                 color = Color(0xFF0284C7),
                 fontSize = 11.sp,
-                fontWeight = FontWeight.Black
+                fontWeight = FontWeight.Black,
+                maxLines = 1,
+                softWrap = false
               )
             }
           }
@@ -409,11 +453,12 @@ fun HomeScreen(
           ) {
             Row(
               verticalAlignment = Alignment.CenterVertically,
-              horizontalArrangement = Arrangement.spacedBy(14.dp)
+              horizontalArrangement = Arrangement.spacedBy(12.dp),
+              modifier = Modifier.weight(1f)
             ) {
               Box(
                 modifier = Modifier
-                  .size(50.dp)
+                  .size(48.dp)
                   .shadow(6.dp, CircleShape, spotColor = NeonOrange.copy(alpha = 0.5f))
                   .background(OrangeLight, CircleShape)
                   .border(2.dp, NeonOrange, CircleShape),
@@ -423,37 +468,47 @@ fun HomeScreen(
                   imageVector = Icons.Default.FlashOn,
                   contentDescription = LocalizationManager.string("quick_play"),
                   tint = NeonOrange,
-                  modifier = Modifier.size(30.dp)
+                  modifier = Modifier.size(28.dp)
                 )
               }
 
-              Column {
+              Column(modifier = Modifier.weight(1f)) {
                 Text(
                   text = LocalizationManager.string("quick_play_title"),
                   color = TextDark,
-                  fontSize = 18.sp,
-                  fontWeight = FontWeight.ExtraBold
+                  fontSize = 16.sp,
+                  fontWeight = FontWeight.ExtraBold,
+                  maxLines = 1,
+                  softWrap = false,
+                  overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                 )
                 Text(
                   text = LocalizationManager.string("quick_play_sub"),
                   color = TextDarkSecondary,
-                  fontSize = 12.sp
+                  fontSize = 12.sp,
+                  maxLines = 1,
+                  softWrap = false,
+                  overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                 )
               }
             }
+
+            Spacer(modifier = Modifier.width(8.dp))
 
             // Prominent Action Button
             Box(
               modifier = Modifier
                 .clip(RoundedCornerShape(14.dp))
                 .background(Brush.horizontalGradient(listOf(NeonOrange, Color(0xFFEA580C))))
-                .padding(horizontal = 14.dp, vertical = 8.dp)
+                .padding(horizontal = 14.dp, vertical = 9.dp)
             ) {
               Text(
                 text = LocalizationManager.string("play_btn"),
                 color = Color.White,
                 fontSize = 13.sp,
-                fontWeight = FontWeight.Black
+                fontWeight = FontWeight.Black,
+                maxLines = 1,
+                softWrap = false
               )
             }
           }
@@ -598,14 +653,17 @@ fun CategoryPillCard(
       Text(
         text = title,
         color = textColor,
-        fontSize = 14.sp,
-        fontWeight = FontWeight.ExtraBold
+        fontSize = 13.sp,
+        fontWeight = FontWeight.ExtraBold,
+        maxLines = 1,
+        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
       )
       Text(
         text = "OYNA ➔",
         color = textColor.copy(alpha = 0.8f),
         fontSize = 10.sp,
-        fontWeight = FontWeight.Bold
+        fontWeight = FontWeight.Bold,
+        maxLines = 1
       )
     }
   }

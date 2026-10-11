@@ -71,14 +71,14 @@ fun AdSimulationDialog(
   onRewardGranted: () -> Unit,
   onDismiss: () -> Unit
 ) {
-  var secondsLeft by remember { mutableIntStateOf(5) }
+  var secondsLeft by remember { mutableIntStateOf(3) }
   var isCompleted by remember { mutableStateOf(false) }
   val progress = remember { Animatable(0f) }
 
   LaunchedEffect(Unit) {
     progress.animateTo(
       targetValue = 1f,
-      animationSpec = tween(durationMillis = 5000, easing = LinearEasing)
+      animationSpec = tween(durationMillis = 3000, easing = LinearEasing)
     )
   }
 
@@ -93,14 +93,14 @@ fun AdSimulationDialog(
 
   Dialog(
     onDismissRequest = {
-      if (isCompleted) onDismiss()
+      onDismiss()
     },
     properties = DialogProperties(usePlatformDefaultWidth = false)
   ) {
     Box(
       modifier = Modifier
         .fillMaxSize()
-        .background(Color(0xFF0F172A))
+        .background(Color(0xFF0F172A).copy(alpha = 0.95f))
         .padding(20.dp),
       contentAlignment = Alignment.Center
     ) {
@@ -128,77 +128,61 @@ fun AdSimulationDialog(
               modifier = Modifier
                 .clip(RoundedCornerShape(6.dp))
                 .background(Color(0xFFF59E0B))
-                .padding(horizontal = 6.dp, vertical = 2.dp)
+                .padding(horizontal = 7.dp, vertical = 2.dp)
             ) {
               Text(
                 text = "REKLAM",
                 color = Color.Black,
-                fontSize = 10.sp,
+                fontSize = 11.sp,
                 fontWeight = FontWeight.Black
               )
             }
             Text(
-              text = "Google AdMob Test Reklamı",
-              color = Color.White.copy(alpha = 0.8f),
+              text = "Google AdMob • Video Önizleme",
+              color = Color.White.copy(alpha = 0.85f),
               fontSize = 12.sp,
               fontWeight = FontWeight.SemiBold
             )
           }
 
-          if (isCompleted) {
-            IconButton(
-              onClick = onDismiss,
-              modifier = Modifier
-                .size(34.dp)
-                .clip(CircleShape)
-                .background(Color.White.copy(alpha = 0.15f))
-            ) {
-              Icon(Icons.Default.Close, contentDescription = "Kapat", tint = Color.White)
-            }
-          } else {
-            Box(
-              modifier = Modifier
-                .clip(RoundedCornerShape(12.dp))
-                .background(Color.Black.copy(alpha = 0.4f))
-                .padding(horizontal = 10.dp, vertical = 4.dp)
-            ) {
-              Text(
-                text = "Ödül: ${secondsLeft}s",
-                color = NeonGold,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold
-              )
-            }
+          IconButton(
+            onClick = onDismiss,
+            modifier = Modifier
+              .size(36.dp)
+              .clip(CircleShape)
+              .background(Color.White.copy(alpha = 0.2f))
+          ) {
+            Icon(Icons.Default.Close, contentDescription = "Kapat", tint = Color.White)
           }
         }
 
-        // Progress bar
+        // Video Progress bar
         LinearProgressIndicator(
           progress = { progress.value },
           modifier = Modifier
             .fillMaxWidth()
-            .height(4.dp)
-            .clip(RoundedCornerShape(2.dp)),
+            .height(5.dp)
+            .clip(RoundedCornerShape(3.dp)),
           color = VibrantGreen,
           trackColor = Color(0xFF334155)
         )
 
-        // Ad Creative Card (Simulating game sponsor / Play Store game promotion)
+        // Ad Video / Creative Player Showcase
         Box(
           modifier = Modifier
             .fillMaxWidth()
-            .height(200.dp)
+            .height(210.dp)
             .clip(RoundedCornerShape(20.dp))
             .background(
               Brush.verticalGradient(
                 listOf(
-                  Color(0xFF2563EB),
-                  Color(0xFF1D4ED8),
-                  Color(0xFF0F172A)
+                  Color(0xFF1E3A8A),
+                  Color(0xFF0F172A),
+                  Color(0xFF020617)
                 )
               )
             )
-            .border(1.dp, Color.White.copy(alpha = 0.2f), RoundedCornerShape(20.dp))
+            .border(1.5.dp, SkyBlueAccent.copy(alpha = 0.5f), RoundedCornerShape(20.dp))
             .padding(16.dp),
           contentAlignment = Alignment.Center
         ) {
@@ -208,29 +192,34 @@ fun AdSimulationDialog(
           ) {
             Box(
               modifier = Modifier
-                .size(54.dp)
-                .shadow(12.dp, CircleShape, spotColor = SkyBlueAccent)
-                .background(Color.White.copy(alpha = 0.2f), CircleShape),
+                .size(60.dp)
+                .shadow(14.dp, CircleShape, spotColor = SkyBlueAccent)
+                .background(
+                  Brush.radialGradient(
+                    listOf(Color(0xFF38BDF8), Color(0xFF2563EB))
+                  ),
+                  CircleShape
+                ),
               contentAlignment = Alignment.Center
             ) {
-              Text(text = "🎮", fontSize = 28.sp)
+              Text(text = "🎬", fontSize = 30.sp)
             }
             Text(
-              text = "Time Rush: Zeka & Hız",
+              text = "Time Rush: Zeka & Hız Arenası",
               color = Color.White,
-              fontSize = 18.sp,
+              fontSize = 17.sp,
               fontWeight = FontWeight.Black
             )
             Text(
-              text = "Google Play Store • AdMob Hazır",
+              text = "Video Reklam Gösterimi Aktif",
               color = SkyBlueAccent,
               fontSize = 12.sp,
-              fontWeight = FontWeight.Medium
+              fontWeight = FontWeight.SemiBold
             )
             Text(
-              text = "Birim: ${com.example.ads.AdManager.REWARDED_AD_UNIT_ID}",
-              color = Color.White.copy(alpha = 0.6f),
-              fontSize = 10.sp,
+              text = "Google Play Store'da gerçek AdMob reklam ağı canlı olarak yüklenecektir.",
+              color = Color.White.copy(alpha = 0.7f),
+              fontSize = 11.sp,
               textAlign = TextAlign.Center
             )
           }

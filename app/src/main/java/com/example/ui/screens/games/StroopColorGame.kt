@@ -44,20 +44,17 @@ import com.example.ui.theme.VibrantRed
 import kotlin.random.Random
 
 data class ColorItem(
-  val key: String,
-  val defaultName: String,
+  val displayName: String,
   val color: Color
-) {
-  val displayName: String
-    get() = com.example.util.LocalizationManager.string(key)
-}
+)
 
 val COLOR_POOL = listOf(
-  ColorItem("color_red", "Kırmızı", Color(0xFFEF4444)),
-  ColorItem("color_blue", "Mavi", Color(0xFF3B82F6)),
-  ColorItem("color_green", "Yeşil", Color(0xFF10B981)),
-  ColorItem("color_yellow", "Sarı", Color(0xFFFBBF24)),
-  ColorItem("color_purple", "Mor", Color(0xFFA855F7))
+  ColorItem("Kırmızı", Color(0xFFEF4444)),
+  ColorItem("Mavi", Color(0xFF3B82F6)),
+  ColorItem("Yeşil", Color(0xFF10B981)),
+  ColorItem("Sarı", Color(0xFFFBBF24)),
+  ColorItem("Mor", Color(0xFFA855F7)),
+  ColorItem("Turuncu", Color(0xFFF97316))
 )
 
 enum class StroopTargetRule {
@@ -126,7 +123,7 @@ fun StroopColorGame(
     horizontalAlignment = Alignment.CenterHorizontally
   ) {
     GameTopBar(
-      title = "Renk & Beyin Çelişkisi",
+      title = "Renk Seçimi",
       streak = streak,
       isRiskMode = isRiskMode,
       onBack = onBack
@@ -136,7 +133,7 @@ fun StroopColorGame(
     Row(
       modifier = Modifier
         .fillMaxWidth()
-        .padding(horizontal = 26.dp),
+        .padding(horizontal = 24.dp),
       horizontalArrangement = Arrangement.SpaceBetween,
       verticalAlignment = Alignment.CenterVertically
     ) {
@@ -145,7 +142,7 @@ fun StroopColorGame(
           .clip(RoundedCornerShape(12.dp))
           .background(Color.Black.copy(alpha = 0.5f))
           .border(1.dp, SkyBlueAccent, RoundedCornerShape(12.dp))
-          .padding(horizontal = 12.dp, vertical = 4.dp)
+          .padding(horizontal = 12.dp, vertical = 5.dp)
       ) {
         Text(
           text = "Tamamlanan: $totalCompleted",
@@ -160,75 +157,90 @@ fun StroopColorGame(
           text = feedbackText,
           color = if (feedbackIsSuccess) VibrantGreen else VibrantRed,
           fontSize = 12.sp,
-          fontWeight = FontWeight.Black
+          fontWeight = FontWeight.Black,
+          maxLines = 1,
+          overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
         )
       }
     }
 
-    Spacer(modifier = Modifier.height(14.dp))
+    Spacer(modifier = Modifier.height(10.dp))
 
     // Kural İpucu Banner'ı
-    val ruleDescription = if (challenge.rule == StroopTargetRule.WORD_TEXT) {
-      com.example.util.LocalizationManager.string("rule_stroop_word")
+    val ruleBadge = if (challenge.rule == StroopTargetRule.WORD_TEXT) {
+      "📖 KURAL: KELİMENİN ANLAMI"
     } else {
-      com.example.util.LocalizationManager.string("rule_stroop_ink")
+      "🎨 KURAL: YAZININ RENGİ"
     }
 
-    Box(
-      modifier = Modifier
-        .clip(RoundedCornerShape(16.dp))
-        .background(Color.Black.copy(alpha = 0.6f))
-        .border(1.5.dp, NeonGold, RoundedCornerShape(16.dp))
-        .padding(horizontal = 16.dp, vertical = 6.dp)
+    val ruleInstruction = if (challenge.rule == StroopTargetRule.WORD_TEXT) {
+      "Yazıda okuduğun rengi seç!"
+    } else {
+      "Kelimenin boyandığı rengi seç!"
+    }
+
+    Column(
+      horizontalAlignment = Alignment.CenterHorizontally,
+      modifier = Modifier.padding(horizontal = 20.dp)
     ) {
+      Box(
+        modifier = Modifier
+          .clip(RoundedCornerShape(16.dp))
+          .background(Color.Black.copy(alpha = 0.65f))
+          .border(1.5.dp, NeonGold, RoundedCornerShape(16.dp))
+          .padding(horizontal = 16.dp, vertical = 6.dp)
+      ) {
+        Text(
+          text = ruleBadge,
+          color = NeonGold,
+          fontSize = 13.sp,
+          fontWeight = FontWeight.Black,
+          letterSpacing = 0.5.sp
+        )
+      }
+
+      Spacer(modifier = Modifier.height(4.dp))
+
       Text(
-        text = "⚡ ${com.example.util.LocalizationManager.string("rule_prefix")} $ruleDescription",
-        color = NeonGold,
+        text = ruleInstruction,
+        color = Color.White.copy(alpha = 0.9f),
         fontSize = 12.sp,
-        fontWeight = FontWeight.Black,
-        letterSpacing = 0.5.sp
+        fontWeight = FontWeight.Medium
       )
     }
 
-    Spacer(modifier = Modifier.height(16.dp))
+    Spacer(modifier = Modifier.height(14.dp))
 
     // Stroop Çelişki Kartı
     Box(
       modifier = Modifier
         .fillMaxWidth()
-        .padding(horizontal = 28.dp)
-        .shadow(16.dp, RoundedCornerShape(26.dp), spotColor = challenge.inkItem.color.copy(alpha = 0.5f))
-        .clip(RoundedCornerShape(26.dp))
+        .padding(horizontal = 24.dp)
+        .shadow(16.dp, RoundedCornerShape(24.dp), spotColor = challenge.inkItem.color.copy(alpha = 0.5f))
+        .clip(RoundedCornerShape(24.dp))
         .background(CardWhite)
-        .border(3.dp, challenge.inkItem.color, RoundedCornerShape(26.dp))
-        .padding(vertical = 24.dp),
+        .border(3.dp, challenge.inkItem.color, RoundedCornerShape(24.dp))
+        .padding(vertical = 20.dp),
       contentAlignment = Alignment.Center
     ) {
-      Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(
-          text = challenge.wordItem.displayName.uppercase(),
-          color = challenge.inkItem.color,
-          fontSize = 42.sp,
-          fontWeight = FontWeight.Black,
-          letterSpacing = 2.sp
-        )
-        Text(
-          text = "(${challenge.wordItem.displayName} • ${challenge.inkItem.displayName})",
-          color = TextDark.copy(alpha = 0.6f),
-          fontSize = 11.sp,
-          fontWeight = FontWeight.SemiBold
-        )
-      }
+      Text(
+        text = challenge.wordItem.displayName.uppercase(java.util.Locale("tr", "TR")),
+        color = challenge.inkItem.color,
+        fontSize = 38.sp,
+        fontWeight = FontWeight.Black,
+        letterSpacing = 2.sp,
+        maxLines = 1
+      )
     }
 
-    Spacer(modifier = Modifier.height(16.dp))
+    Spacer(modifier = Modifier.height(14.dp))
 
     Text(
-      text = com.example.util.LocalizationManager.string("stroop_tap_balloon"),
+      text = "AŞAĞIDAN DOĞRU RENGİ SEÇ",
       color = SkyBlueAccent,
       fontSize = 12.sp,
       fontWeight = FontWeight.Black,
-      letterSpacing = 1.sp
+      letterSpacing = 0.8.sp
     )
 
     Spacer(modifier = Modifier.height(16.dp))
@@ -291,30 +303,31 @@ private fun ColorBalloon(
 ) {
   Box(
     modifier = modifier
-      .height(68.dp)
-      .shadow(8.dp, RoundedCornerShape(20.dp), spotColor = item.color.copy(alpha = 0.5f))
-      .clip(RoundedCornerShape(20.dp))
+      .height(64.dp)
+      .shadow(8.dp, RoundedCornerShape(18.dp), spotColor = item.color.copy(alpha = 0.5f))
+      .clip(RoundedCornerShape(18.dp))
       .background(item.color)
-      .border(2.5.dp, Color.White, RoundedCornerShape(20.dp))
+      .border(2.5.dp, Color.White, RoundedCornerShape(18.dp))
       .clickable { onClick() }
-      .padding(horizontal = 12.dp),
+      .padding(horizontal = 8.dp),
     contentAlignment = Alignment.Center
   ) {
     Row(
       verticalAlignment = Alignment.CenterVertically,
-      horizontalArrangement = Arrangement.spacedBy(8.dp)
+      horizontalArrangement = Arrangement.spacedBy(6.dp)
     ) {
       Box(
         modifier = Modifier
-          .size(16.dp)
+          .size(14.dp)
           .clip(CircleShape)
           .background(Color.White)
       )
       Text(
         text = item.displayName,
         color = Color.White,
-        fontSize = 18.sp,
-        fontWeight = FontWeight.Black
+        fontSize = 15.sp,
+        fontWeight = FontWeight.Black,
+        maxLines = 1
       )
     }
   }

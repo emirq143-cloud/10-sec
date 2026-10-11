@@ -113,7 +113,7 @@ fun ProfileScreen(
             .clip(RoundedCornerShape(24.dp))
             .background(CardFrosted)
             .border(2.dp, SkyBlueAccent, RoundedCornerShape(24.dp))
-            .padding(18.dp)
+            .padding(16.dp)
         ) {
           Row(
             modifier = Modifier.fillMaxWidth(),
@@ -122,30 +122,35 @@ fun ProfileScreen(
           ) {
             Row(
               verticalAlignment = Alignment.CenterVertically,
-              horizontalArrangement = Arrangement.spacedBy(14.dp)
+              horizontalArrangement = Arrangement.spacedBy(12.dp),
+              modifier = Modifier.weight(1f)
             ) {
               val selectedAvatar = avatars.find { it.id == userProfile.selectedAvatarId }
               Box(
                 modifier = Modifier
-                  .size(62.dp)
+                  .size(56.dp)
                   .clip(CircleShape)
                   .background(Color(0xFFEFF6FF))
                   .border(2.dp, SkyBlueAccent, CircleShape),
                 contentAlignment = Alignment.Center
               ) {
-                Text(text = selectedAvatar?.emoji ?: "🧑‍🚀", fontSize = 32.sp)
+                Text(text = selectedAvatar?.emoji ?: "🧑‍🚀", fontSize = 28.sp)
               }
 
-              Column {
+              Column(modifier = Modifier.weight(1f)) {
                 Row(
                   verticalAlignment = Alignment.CenterVertically,
-                  horizontalArrangement = Arrangement.spacedBy(6.dp)
+                  horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                   Text(
                     text = userProfile.name,
                     color = TextDark,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.ExtraBold
+                    fontSize = 17.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    maxLines = 1,
+                    softWrap = false,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false)
                   )
                   IconButton(
                     onClick = {
@@ -153,27 +158,32 @@ fun ProfileScreen(
                       showEditNameDialog = true
                     },
                     modifier = Modifier
-                      .size(28.dp)
+                      .size(26.dp)
                       .testTag("edit_nickname_button")
                   ) {
                     Icon(
                       imageVector = Icons.Default.Edit,
                       contentDescription = "Takma Adı Düzenle",
                       tint = BluePrimary,
-                      modifier = Modifier.size(16.dp)
+                      modifier = Modifier.size(15.dp)
                     )
                   }
                 }
                 Text(
                   text = "${userProfile.league.displayName} • #${userProfile.nationalRank}",
                   color = BluePrimary,
-                  fontSize = 13.sp,
-                  fontWeight = FontWeight.SemiBold
+                  fontSize = 12.sp,
+                  fontWeight = FontWeight.SemiBold,
+                  maxLines = 1,
+                  softWrap = false,
+                  overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                 )
                 Text(
                   text = "Seviye ${userProfile.level} • ${userProfile.coins} Altın",
                   color = TextDarkSecondary,
-                  fontSize = 12.sp
+                  fontSize = 12.sp,
+                  maxLines = 1,
+                  softWrap = false
                 )
               }
             }
@@ -187,10 +197,10 @@ fun ProfileScreen(
                   .clip(RoundedCornerShape(14.dp))
                   .background(OrangeLight)
                   .border(1.dp, NeonOrange.copy(alpha = 0.3f), RoundedCornerShape(14.dp))
-                  .padding(horizontal = 10.dp, vertical = 8.dp)
+                  .padding(horizontal = 10.dp, vertical = 6.dp)
               ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                  Text(text = "🔥 ${userProfile.maxStreak}", color = NeonOrange, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                  Text(text = "🔥 ${userProfile.maxStreak}", color = NeonOrange, fontSize = 13.sp, fontWeight = FontWeight.Bold)
                   Text(text = "Seri", color = TextDarkSecondary, fontSize = 10.sp)
                 }
               }
@@ -198,7 +208,7 @@ fun ProfileScreen(
               IconButton(
                 onClick = onOpenSettings,
                 modifier = Modifier
-                  .size(38.dp)
+                  .size(36.dp)
                   .clip(CircleShape)
                   .background(Color(0xFFF1F5F9))
                   .border(1.dp, Color(0xFFCBD5E1), CircleShape)
@@ -207,7 +217,7 @@ fun ProfileScreen(
                   imageVector = Icons.Default.Settings,
                   contentDescription = "Ayarlar",
                   tint = TextDarkSecondary,
-                  modifier = Modifier.size(20.dp)
+                  modifier = Modifier.size(18.dp)
                 )
               }
             }
@@ -226,7 +236,8 @@ fun ProfileScreen(
             .border(2.dp, Color(0xFFCBD5E1), RoundedCornerShape(24.dp))
             .padding(18.dp)
         ) {
-          Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+          Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            // Header: 🧠 Beyin Performansı on left, overall score on right
             Row(
               modifier = Modifier.fillMaxWidth(),
               verticalAlignment = Alignment.CenterVertically,
@@ -234,48 +245,99 @@ fun ProfileScreen(
             ) {
               Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.weight(1f)
               ) {
-                Text(text = "🧠", fontSize = 20.sp)
+                Text(text = "🧠", fontSize = 22.sp)
                 Text(
                   text = "Beyin Performansı",
                   color = TextDark,
                   fontSize = 17.sp,
-                  fontWeight = FontWeight.Bold
+                  fontWeight = FontWeight.Bold,
+                  maxLines = 1
                 )
               }
 
-              Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
+              Box(
+                modifier = Modifier
+                  .clip(RoundedCornerShape(12.dp))
+                  .background(Color(0xFFFEF3C7))
+                  .border(1.dp, NeonGold, RoundedCornerShape(12.dp))
+                  .padding(horizontal = 10.dp, vertical = 5.dp)
               ) {
-                Box(
-                  modifier = Modifier
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(Color(0xFFE0F2FE))
-                    .clickable { onOpenReactionAnalytics() }
-                    .padding(horizontal = 8.dp, vertical = 4.dp)
+                Text(
+                  text = "${userProfile.overallBrainScore}/100",
+                  color = Color(0xFFB45309),
+                  fontSize = 13.sp,
+                  fontWeight = FontWeight.Black
+                )
+              }
+            }
+
+            // Dedicated Tepki Hızı Banner: spacious, clearly readable number and ms!
+            Box(
+              modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(14.dp))
+                .background(Color(0xFFEFF6FF))
+                .border(1.2.dp, Color(0xFF38BDF8), RoundedCornerShape(14.dp))
+                .clickable { onOpenReactionAnalytics() }
+                .padding(horizontal = 14.dp, vertical = 10.dp)
+            ) {
+              Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+              ) {
+                Row(
+                  verticalAlignment = Alignment.CenterVertically,
+                  horizontalArrangement = Arrangement.spacedBy(8.dp),
+                  modifier = Modifier.weight(1f)
                 ) {
-                  Text(
-                    text = "⚡ ${userProfile.avgReactionTimeMs} ms",
-                    color = BluePrimary,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.ExtraBold
-                  )
+                  Text(text = "⚡", fontSize = 16.sp)
+                  Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                      text = "Ortalama Tepki Hızı",
+                      color = TextDark,
+                      fontSize = 13.sp,
+                      fontWeight = FontWeight.Bold,
+                      maxLines = 1,
+                      softWrap = false,
+                      overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                    )
+                    Text(
+                      text = "Detaylı grafik analizi",
+                      color = BluePrimary,
+                      fontSize = 11.sp,
+                      maxLines = 1,
+                      softWrap = false
+                    )
+                  }
                 }
+
+                Spacer(modifier = Modifier.width(8.dp))
 
                 Box(
                   modifier = Modifier
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(Color(0xFFFEF3C7))
-                    .padding(horizontal = 8.dp, vertical = 4.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(Color.White)
+                    .border(1.dp, Color(0xFF38BDF8), RoundedCornerShape(10.dp))
+                    .padding(horizontal = 9.dp, vertical = 5.dp)
                 ) {
-                  Text(
-                    text = "${userProfile.overallBrainScore}/100",
-                    color = Color(0xFFB45309),
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.ExtraBold
-                  )
+                  Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                  ) {
+                    Text(
+                      text = "${userProfile.avgReactionTimeMs} ms",
+                      color = BluePrimary,
+                      fontSize = 13.sp,
+                      fontWeight = FontWeight.ExtraBold,
+                      maxLines = 1,
+                      softWrap = false
+                    )
+                    Text(text = "➔", color = BluePrimary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                  }
                 }
               }
             }
@@ -731,14 +793,23 @@ fun BrainMetricBar(label: String, score: Int, color: Color) {
   Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
     Row(
       modifier = Modifier.fillMaxWidth(),
-      horizontalArrangement = Arrangement.SpaceBetween
+      horizontalArrangement = Arrangement.SpaceBetween,
+      verticalAlignment = Alignment.CenterVertically
     ) {
-      Text(text = label, color = TextDarkSecondary, fontSize = 13.sp)
+      Text(
+        text = label,
+        color = TextDarkSecondary,
+        fontSize = 13.sp,
+        maxLines = 1,
+        softWrap = false
+      )
       Text(
         text = "$score / 100",
         color = TextDark,
         fontSize = 13.sp,
-        fontWeight = FontWeight.Bold
+        fontWeight = FontWeight.Bold,
+        maxLines = 1,
+        softWrap = false
       )
     }
 

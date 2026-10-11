@@ -88,6 +88,12 @@ object LocalizationManager {
     "rule_stroop_ink" to "Yazının Mürekkep Rengi",
     "rule_prefix" to "Kural:",
     "stroop_tap_balloon" to "Doğru Balona Dokun",
+    "color_red" to "Kırmızı",
+    "color_blue" to "Mavi",
+    "color_green" to "Yeşil",
+    "color_yellow" to "Sarı",
+    "color_purple" to "Mor",
+    "color_orange" to "Turuncu",
     "stopped" to "Durduruldu",
     "press_stop" to "DUR'a Bas",
     "find_diff_instruction" to "Farklı Olanı Bul"

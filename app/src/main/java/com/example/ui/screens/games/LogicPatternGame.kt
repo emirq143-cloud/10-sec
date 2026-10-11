@@ -197,7 +197,9 @@ fun LogicPatternGame(
           text = feedbackText,
           color = if (feedbackIsSuccess) VibrantGreen else VibrantRed,
           fontSize = 12.sp,
-          fontWeight = FontWeight.Black
+          fontWeight = FontWeight.Black,
+          maxLines = 1,
+          overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
         )
       }
     }
@@ -284,8 +286,10 @@ fun LogicPatternGame(
             Text(
               text = "$option",
               color = TextDark,
-              fontSize = 28.sp,
-              fontWeight = FontWeight.Black
+              fontSize = 26.sp,
+              fontWeight = FontWeight.Black,
+              maxLines = 1,
+              softWrap = false
             )
           }
         }
@@ -321,8 +325,10 @@ private fun PatternLine(icon: String, value: String, isHighlight: Boolean = fals
     Text(
       text = value,
       color = if (isHighlight) NeonOrange else TextDark,
-      fontSize = if (isHighlight) 34.sp else 26.sp,
-      fontWeight = FontWeight.Black
+      fontSize = if (isHighlight) 32.sp else 24.sp,
+      fontWeight = FontWeight.Black,
+      maxLines = 1,
+      softWrap = false
     )
   }
 }

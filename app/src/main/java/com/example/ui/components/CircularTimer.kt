@@ -98,7 +98,9 @@ fun CircularTimer(
       text = String.format(Locale.US, "%.0fs", max(0f, remainingSeconds)),
       color = Color.White,
       fontSize = (size.value * 0.28f).sp,
-      fontWeight = FontWeight.ExtraBold
+      fontWeight = FontWeight.ExtraBold,
+      maxLines = 1,
+      softWrap = false
     )
   }
 }

@@ -113,14 +113,14 @@ fun TransitionAdDialog(
                 .padding(horizontal = 6.dp, vertical = 2.dp)
             ) {
               Text(
-                text = "GEÇİŞ REKLAMI",
+                text = "MOLA",
                 color = Color.Black,
                 fontSize = 10.sp,
                 fontWeight = FontWeight.Black
               )
             }
             Text(
-              text = "Google AdMob",
+              text = "Kısa Ara",
               color = Color.White.copy(alpha = 0.8f),
               fontSize = 12.sp,
               fontWeight = FontWeight.SemiBold
@@ -204,15 +204,15 @@ fun TransitionAdDialog(
               fontWeight = FontWeight.Black
             )
             Text(
-              text = "2 Oyun Sonu Otomatik Geçiş Reklamı",
+              text = "Mola & Enerji Zamanı",
               color = SkyBlueAccent,
               fontSize = 12.sp,
               fontWeight = FontWeight.Medium
             )
             Text(
-              text = "Ad Unit ID: ${AdManager.REWARDED_INTERSTITIAL_AD_UNIT_ID}",
-              color = Color.White.copy(alpha = 0.6f),
-              fontSize = 10.sp,
+              text = "Sponsorlu İçerik",
+              color = Color.White.copy(alpha = 0.7f),
+              fontSize = 11.sp,
               textAlign = TextAlign.Center
             )
           }

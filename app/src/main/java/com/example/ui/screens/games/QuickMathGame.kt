@@ -194,7 +194,9 @@ fun QuickMathGame(
           text = feedbackText,
           color = if (feedbackIsSuccess) VibrantGreen else VibrantRed,
           fontSize = 12.sp,
-          fontWeight = FontWeight.Black
+          fontWeight = FontWeight.Black,
+          maxLines = 1,
+          overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
         )
       }
     }
@@ -217,8 +219,11 @@ fun QuickMathGame(
         Text(
           text = currentProblem.prompt,
           color = TextDark,
-          fontSize = 32.sp,
-          fontWeight = FontWeight.ExtraBold
+          fontSize = 28.sp,
+          fontWeight = FontWeight.ExtraBold,
+          maxLines = 1,
+          softWrap = false,
+          overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
         )
 
         Spacer(modifier = Modifier.height(6.dp))
@@ -238,7 +243,9 @@ fun QuickMathGame(
             text = if (enteredInput.isEmpty()) "Cevabı Girin..." else enteredInput,
             color = if (enteredInput.isEmpty()) TextDarkMuted else BluePrimary,
             fontSize = 20.sp,
-            fontWeight = FontWeight.Black
+            fontWeight = FontWeight.Black,
+            maxLines = 1,
+            softWrap = false
           )
         }
       }
@@ -273,13 +280,14 @@ fun QuickMathGame(
 
           Box(
             modifier = Modifier
-              .size(64.dp)
+              .fillMaxWidth()
+              .height(56.dp)
               .shadow(
                 6.dp,
-                CircleShape,
+                RoundedCornerShape(18.dp),
                 spotColor = if (isOk) VibrantGreen.copy(alpha = 0.5f) else Color(0x33000000)
               )
-              .clip(CircleShape)
+              .clip(RoundedCornerShape(18.dp))
               .background(
                 when {
                   isOk -> VibrantGreen
@@ -294,7 +302,7 @@ fun QuickMathGame(
                   item == "⌫" -> Color.White
                   else -> SkyBlueAccent
                 },
-                shape = CircleShape
+                shape = RoundedCornerShape(18.dp)
               )
               .clickable {
                 when (item) {
@@ -318,8 +326,10 @@ fun QuickMathGame(
             Text(
               text = item,
               color = if (isSpecial) Color.White else TextDark,
-              fontSize = if (isSpecial) 18.sp else 24.sp,
-              fontWeight = FontWeight.Black
+              fontSize = if (isSpecial) 18.sp else 23.sp,
+              fontWeight = FontWeight.Black,
+              maxLines = 1,
+              softWrap = false
             )
           }
         }

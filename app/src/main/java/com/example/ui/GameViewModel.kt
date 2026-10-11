@@ -71,7 +71,7 @@ data class GamePlaySession(
 class GameViewModel(application: Application) : AndroidViewModel(application) {
   private val repository = GameRepository(application)
   private val leaderboardRepository = LeaderboardRepository(application)
-  val authManager = GoogleAuthManager()
+  val authManager = GoogleAuthManager(application)
 
   val currentUser: StateFlow<FirebaseUser?> = authManager.authStateFlow
     .stateIn(viewModelScope, SharingStarted.Eagerly, authManager.currentUser)
@@ -110,7 +110,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
   val avatars: StateFlow<List<AvatarItem>> = repository.avatars
   val dailyMissions: StateFlow<List<DailyMission>> = repository.dailyMissions
 
-  private val _screenState = MutableStateFlow(ScreenState.START)
+  private val _screenState = MutableStateFlow(ScreenState.HOME)
   val screenState: StateFlow<ScreenState> = _screenState.asStateFlow()
 
   private val _selectedTab = MutableStateFlow(0) // 0: Home, 1: Games, 2: Leaderboard, 3: Profile
@@ -158,6 +158,26 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
   private var timerJob: Job? = null
   private val context: Context get() = getApplication<Application>().applicationContext
 
+  fun resetAllDialogs() {
+    _showLuckyWheel.value = false
+    _showReactionAnalytics.value = false
+    _showSettings.value = false
+    _showPrivacyPolicy.value = false
+    _showTransitionAdSimulation.value = false
+    _showReviveDialog.value = null
+    _showAdSimulation.value = null
+    _pendingRiskGame.value = null
+    _showStreakCelebration.value = false
+  }
+
+  fun restartGameToHome() {
+    timerJob?.cancel()
+    _activeSession.value = null
+    resetAllDialogs()
+    _screenState.value = ScreenState.HOME
+    _selectedTab.value = 0
+  }
+
   fun requestRewardedAd(type: AdRewardType) {
     _showAdSimulation.value = type
   }
@@ -167,11 +187,21 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
       onAdRewardGranted(type)
       return
     }
-    AdManager.showRewardedAd(
-      activity = activity,
-      onRewardEarned = { onAdRewardGranted(type) },
-      onFallback = { _showAdSimulation.value = type }
-    )
+    // Check if real AdMob rewarded ad is loaded and ready
+    if (AdManager.isRewardedAdReady() && activity != null) {
+      AdManager.showRewardedAd(
+        activity = activity,
+        onRewardEarned = { onAdRewardGranted(type) },
+        onFallback = {
+          // If AdMob live ad fails or still loading, show simulation player
+          _showAdSimulation.value = type
+        }
+      )
+    } else {
+      // In web emulator / development environment, display realistic simulated video player
+      // so user experiences the video countdown and receives reward upon completion!
+      _showAdSimulation.value = type
+    }
   }
 
   fun handleGameTransition(activity: Activity?, onProceed: () -> Unit) {
@@ -185,8 +215,8 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         onProceed()
       }
     } else {
-      pendingTransitionAction = onProceed
-      _showTransitionAdSimulation.value = true
+      // If real AdMob ad is not ready yet, do NOT show a fake test dialog; smoothly proceed!
+      onProceed()
     }
   }
 

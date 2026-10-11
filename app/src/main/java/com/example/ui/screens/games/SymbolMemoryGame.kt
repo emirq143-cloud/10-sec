@@ -171,7 +171,9 @@ fun SymbolMemoryGame(
           text = feedbackText,
           color = if (feedbackIsSuccess) VibrantGreen else VibrantRed,
           fontSize = 12.sp,
-          fontWeight = FontWeight.Black
+          fontWeight = FontWeight.Black,
+          maxLines = 1,
+          overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
         )
       }
     }

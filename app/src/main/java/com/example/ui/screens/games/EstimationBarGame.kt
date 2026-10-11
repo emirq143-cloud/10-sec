@@ -160,7 +160,9 @@ fun EstimationBarGame(
           text = feedbackText,
           color = if (feedbackIsSuccess) VibrantGreen else VibrantRed,
           fontSize = 12.sp,
-          fontWeight = FontWeight.Black
+          fontWeight = FontWeight.Black,
+          maxLines = 1,
+          overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
         )
       }
     }
@@ -261,7 +263,9 @@ fun EstimationBarGame(
           text = "%$targetPercent HEDEF",
           color = Color.White,
           fontSize = 11.sp,
-          fontWeight = FontWeight.Black
+          fontWeight = FontWeight.Black,
+          maxLines = 1,
+          softWrap = false
         )
       }
     }

@@ -120,58 +120,67 @@ fun ReactionAnalyticsDialog(
             )
             .padding(18.dp)
         ) {
-          Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-          ) {
-            Column {
-              Text(
-                text = "Ortalama Tepki Süren",
-                color = Color.White.copy(alpha = 0.85f),
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Medium
-              )
-              Row(verticalAlignment = Alignment.Bottom) {
+            Row(
+              modifier = Modifier.fillMaxWidth(),
+              verticalAlignment = Alignment.CenterVertically,
+              horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+              Column(modifier = Modifier.weight(1f)) {
                 Text(
-                  text = "${userProfile.avgReactionTimeMs}",
-                  color = Color.White,
-                  fontSize = 38.sp,
-                  fontWeight = FontWeight.Black
-                )
-                Text(
-                  text = " ms",
-                  color = SkyBlueAccent,
-                  fontSize = 18.sp,
-                  fontWeight = FontWeight.Bold,
-                  modifier = Modifier.padding(bottom = 6.dp)
-                )
-              }
-            }
-
-            Column(horizontalAlignment = Alignment.End) {
-              Box(
-                modifier = Modifier
-                  .clip(RoundedCornerShape(10.dp))
-                  .background(Color.White.copy(alpha = 0.2f))
-                  .padding(horizontal = 10.dp, vertical = 4.dp)
-              ) {
-                Text(
-                  text = "En Hızlı: ${userProfile.bestReactionTimeMs} ms",
-                  color = Color.White,
+                  text = "Ortalama Tepki Süren",
+                  color = Color.White.copy(alpha = 0.85f),
                   fontSize = 12.sp,
-                  fontWeight = FontWeight.Bold
+                  fontWeight = FontWeight.Medium,
+                  maxLines = 1
+                )
+                Row(verticalAlignment = Alignment.Bottom) {
+                  Text(
+                    text = "${userProfile.avgReactionTimeMs}",
+                    color = Color.White,
+                    fontSize = 32.sp,
+                    fontWeight = FontWeight.Black,
+                    maxLines = 1,
+                    softWrap = false
+                  )
+                  Text(
+                    text = " ms",
+                    color = SkyBlueAccent,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(bottom = 3.dp),
+                    maxLines = 1,
+                    softWrap = false
+                  )
+                }
+              }
+
+              Column(horizontalAlignment = Alignment.End) {
+                Box(
+                  modifier = Modifier
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(Color.White.copy(alpha = 0.2f))
+                    .padding(horizontal = 8.dp, vertical = 4.dp)
+                ) {
+                  Text(
+                    text = "En Hızlı: ${userProfile.bestReactionTimeMs} ms",
+                    color = Color.White,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    softWrap = false
+                  )
+                }
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                  text = "⚡ %${userProfile.reactionPercentile} Daha Hızlı",
+                  color = NeonGold,
+                  fontSize = 12.sp,
+                  fontWeight = FontWeight.ExtraBold,
+                  maxLines = 1,
+                  softWrap = false
                 )
               }
-              Spacer(modifier = Modifier.height(6.dp))
-              Text(
-                text = "⚡ %${userProfile.reactionPercentile} Daha Hızlı",
-                color = NeonGold,
-                fontSize = 13.sp,
-                fontWeight = FontWeight.ExtraBold
-              )
             }
-          }
         }
 
         // Percentile Badge

@@ -195,7 +195,7 @@ fun GameRowCard(
           )
         }
 
-        Column {
+        Column(modifier = Modifier.weight(1f)) {
           Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -203,8 +203,11 @@ fun GameRowCard(
             Text(
               text = game.title,
               color = TextDark,
-              fontSize = 17.sp,
-              fontWeight = FontWeight.ExtraBold
+              fontSize = 16.sp,
+              fontWeight = FontWeight.ExtraBold,
+              maxLines = 1,
+              overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+              modifier = Modifier.weight(1f, fill = false)
             )
 
             Box(
@@ -226,7 +229,8 @@ fun GameRowCard(
             text = game.subtitle,
             color = TextDarkSecondary,
             fontSize = 12.sp,
-            maxLines = 1
+            maxLines = 1,
+            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
           )
         }
       }

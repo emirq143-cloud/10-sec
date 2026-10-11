@@ -1,47 +1,61 @@
 package com.example.data.auth
 
 import android.content.Context
+import android.util.Log
 import androidx.credentials.ClearCredentialStateRequest
 import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
+import androidx.credentials.exceptions.GetCredentialCancellationException
+import androidx.credentials.exceptions.GetCredentialException
 import com.example.R
 import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
+import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GoogleAuthProvider
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
-import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.tasks.await
 
-class GoogleAuthManager {
-  private val auth: FirebaseAuth? = try {
-    FirebaseAuth.getInstance()
-  } catch (e: Exception) {
-    null
+class GoogleAuthManager(private val initialContext: Context? = null) {
+
+  fun getAuth(context: Context? = initialContext): FirebaseAuth? {
+    return try {
+      val appContext = context?.applicationContext ?: initialContext?.applicationContext
+      if (appContext != null && FirebaseApp.getApps(appContext).isEmpty()) {
+        FirebaseApp.initializeApp(appContext)
+      }
+      FirebaseAuth.getInstance()
+    } catch (e: Throwable) {
+      Log.w("GoogleAuthManager", "FirebaseAuth not available: ${e.message}")
+      null
+    }
   }
 
   val currentUser: FirebaseUser?
-    get() = auth?.currentUser
+    get() = getAuth()?.currentUser
 
-  val authStateFlow: Flow<FirebaseUser?> = if (auth != null) {
-    callbackFlow {
-      val listener = FirebaseAuth.AuthStateListener { firebaseAuth ->
-        trySend(firebaseAuth.currentUser)
+  val authStateFlow: Flow<FirebaseUser?> = callbackFlow {
+    val firebaseAuth = getAuth()
+    if (firebaseAuth != null) {
+      val listener = FirebaseAuth.AuthStateListener { auth ->
+        trySend(auth.currentUser)
       }
-      auth.addAuthStateListener(listener)
-      awaitClose { auth.removeAuthStateListener(listener) }
+      firebaseAuth.addAuthStateListener(listener)
+      trySend(firebaseAuth.currentUser)
+      awaitClose { firebaseAuth.removeAuthStateListener(listener) }
+    } else {
+      trySend(null)
+      awaitClose {}
     }
-  } else {
-    emptyFlow()
   }
 
   suspend fun signInWithGoogle(context: Context): Result<FirebaseUser> {
-    val firebaseAuth = auth ?: return Result.failure(
-      IllegalStateException("Firebase Auth servisi hazır değil.")
+    val firebaseAuth = getAuth(context) ?: return Result.failure(
+      IllegalStateException("Firebase başlatılamadı. Lütfen Google Play Hizmetlerini ve internetinizi kontrol edin.")
     )
 
     return runCatching {
@@ -62,7 +76,15 @@ class GoogleAuthManager {
         .addCredentialOption(signInWithGoogleOption)
         .build()
 
-      val result = credentialManager.getCredential(context = context, request = request)
+      val result = try {
+        credentialManager.getCredential(context = context, request = request)
+      } catch (e: GetCredentialCancellationException) {
+        throw IllegalStateException("Giriş işlemi iptal edildi.")
+      } catch (e: GetCredentialException) {
+        Log.e("GoogleAuthManager", "CredentialManager hatası: ${e.message}", e)
+        throw IllegalStateException("Google hesabı seçilemedi: ${e.message ?: "İşlem iptal edildi"}")
+      }
+
       val credential = result.credential
 
       if (credential is CustomCredential && credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
@@ -70,7 +92,7 @@ class GoogleAuthManager {
         val idToken = googleIdTokenCredential.idToken
         val firebaseCredential = GoogleAuthProvider.getCredential(idToken, null)
         val authResult = firebaseAuth.signInWithCredential(firebaseCredential).await()
-        authResult.user ?: error("Firebase kullanıcı doğrulaması başarısız oldu.")
+        authResult.user ?: error("Google ile kullanıcı doğrulaması yapılamadı.")
       } else {
         error("Bilinmeyen kimlik bilgisi türü: ${credential.type}")
       }
@@ -83,6 +105,6 @@ class GoogleAuthManager {
       credentialManager.clearCredentialState(ClearCredentialStateRequest())
     } catch (_: Exception) {
     }
-    auth?.signOut()
+    getAuth(context)?.signOut()
   }
 }

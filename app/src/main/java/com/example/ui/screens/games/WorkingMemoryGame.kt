@@ -5,6 +5,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -226,38 +227,46 @@ fun WorkingMemoryGame(
     Spacer(modifier = Modifier.height(14.dp))
 
     // Sayı Gösterim / Slot Kutusu
-    Box(
+    BoxWithConstraints(
       modifier = Modifier
         .fillMaxWidth()
-        .padding(horizontal = 24.dp)
-        .shadow(16.dp, RoundedCornerShape(24.dp), spotColor = BluePrimary.copy(alpha = 0.4f))
-        .clip(RoundedCornerShape(24.dp))
+        .padding(horizontal = 16.dp)
+        .shadow(14.dp, RoundedCornerShape(22.dp), spotColor = BluePrimary.copy(alpha = 0.4f))
+        .clip(RoundedCornerShape(22.dp))
         .background(CardWhite)
-        .border(2.5.dp, BluePrimary, RoundedCornerShape(24.dp))
-        .padding(vertical = 18.dp, horizontal = 16.dp),
+        .border(2.5.dp, BluePrimary, RoundedCornerShape(22.dp))
+        .padding(vertical = 14.dp, horizontal = 8.dp),
       contentAlignment = Alignment.Center
     ) {
+      val totalCount = sequence.size
+      val spacing = if (totalCount >= 5) 6.dp else 10.dp
+      val availableWidth = maxWidth - 16.dp // inner padding
+      val totalSpacingWidth = spacing * (totalCount - 1)
+      val adaptiveBoxSize = ((availableWidth - totalSpacingWidth) / totalCount).coerceIn(36.dp, 52.dp)
+      val numFontSize = if (totalCount >= 5) 20.sp else 26.sp
+
       if (isDisplayPhase) {
         // Hafızaya alınacak sayılar
         Row(
-          horizontalArrangement = Arrangement.spacedBy(14.dp),
+          horizontalArrangement = Arrangement.spacedBy(spacing),
           verticalAlignment = Alignment.CenterVertically
         ) {
           sequence.forEach { num ->
             Box(
               modifier = Modifier
-                .size(54.dp)
-                .shadow(6.dp, RoundedCornerShape(14.dp), spotColor = BluePrimary)
-                .clip(RoundedCornerShape(14.dp))
+                .size(adaptiveBoxSize)
+                .shadow(4.dp, RoundedCornerShape(12.dp), spotColor = BluePrimary)
+                .clip(RoundedCornerShape(12.dp))
                 .background(Color(0xFFEFF6FF))
-                .border(2.dp, BluePrimary, RoundedCornerShape(14.dp)),
+                .border(2.dp, BluePrimary, RoundedCornerShape(12.dp)),
               contentAlignment = Alignment.Center
             ) {
               Text(
                 text = "$num",
                 color = BluePrimary,
-                fontSize = 32.sp,
-                fontWeight = FontWeight.Black
+                fontSize = numFontSize,
+                fontWeight = FontWeight.Black,
+                maxLines = 1
               )
             }
           }
@@ -265,20 +274,20 @@ fun WorkingMemoryGame(
       } else {
         // Kullanıcının girdiği sayılar (Slotlar)
         Row(
-          horizontalArrangement = Arrangement.spacedBy(12.dp),
+          horizontalArrangement = Arrangement.spacedBy(spacing),
           verticalAlignment = Alignment.CenterVertically
         ) {
-          repeat(sequence.size) { i ->
+          repeat(totalCount) { i ->
             val hasDigit = i < enteredDigits.size
             Box(
               modifier = Modifier
-                .size(52.dp)
-                .clip(RoundedCornerShape(14.dp))
+                .size(adaptiveBoxSize)
+                .clip(RoundedCornerShape(12.dp))
                 .background(if (hasDigit) BluePrimary else Color(0xFFF1F5F9))
                 .border(
                   width = 2.dp,
                   color = if (hasDigit) SkyBlueAccent else Color(0xFFCBD5E1),
-                  shape = RoundedCornerShape(14.dp)
+                  shape = RoundedCornerShape(12.dp)
                 ),
               contentAlignment = Alignment.Center
             ) {
@@ -286,11 +295,12 @@ fun WorkingMemoryGame(
                 Text(
                   text = "${enteredDigits[i]}",
                   color = Color.White,
-                  fontSize = 28.sp,
-                  fontWeight = FontWeight.Black
+                  fontSize = numFontSize,
+                  fontWeight = FontWeight.Black,
+                  maxLines = 1
                 )
               } else {
-                Text(text = "•", color = Color(0xFF94A3B8), fontSize = 24.sp)
+                Text(text = "•", color = Color(0xFF94A3B8), fontSize = 18.sp, maxLines = 1)
               }
             }
           }
@@ -298,14 +308,14 @@ fun WorkingMemoryGame(
       }
     }
 
-    Spacer(modifier = Modifier.height(10.dp))
+    Spacer(modifier = Modifier.height(8.dp))
 
     // Keypad (1 to 9, Sil)
     Box(
       modifier = Modifier
         .weight(1f)
         .fillMaxWidth()
-        .padding(horizontal = 28.dp),
+        .padding(horizontal = 24.dp),
       contentAlignment = Alignment.Center
     ) {
       val keypadItems = listOf(
@@ -317,22 +327,23 @@ fun WorkingMemoryGame(
 
       LazyVerticalGrid(
         columns = GridCells.Fixed(3),
-        horizontalArrangement = Arrangement.spacedBy(14.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
       ) {
         items(keypadItems.size) { index ->
           val item = keypadItems[index]
           if (item == " ") {
-            Spacer(modifier = Modifier.size(62.dp))
+            Spacer(modifier = Modifier.height(50.dp))
           } else {
             val isDelete = item == "⌫"
             val isClear = item == "C"
 
             Box(
               modifier = Modifier
-                .size(62.dp)
-                .shadow(6.dp, CircleShape, spotColor = if (isDelete) Color(0xFFEF4444) else BluePrimary)
-                .clip(CircleShape)
+                .fillMaxWidth()
+                .height(50.dp)
+                .shadow(6.dp, RoundedCornerShape(18.dp), spotColor = if (isDelete) Color(0xFFEF4444) else BluePrimary)
+                .clip(RoundedCornerShape(18.dp))
                 .background(
                   when {
                     isDelete -> Color(0xFFEF4444)
@@ -344,7 +355,7 @@ fun WorkingMemoryGame(
                 .border(
                   width = 2.dp,
                   color = if (isDelete || isClear) Color.White else SkyBlueAccent,
-                  shape = CircleShape
+                  shape = RoundedCornerShape(18.dp)
                 )
                 .clickable(enabled = !isDisplayPhase) {
                   when (item) {
@@ -370,8 +381,10 @@ fun WorkingMemoryGame(
               Text(
                 text = item,
                 color = if (isDelete || isClear) Color.White else TextDark,
-                fontSize = if (isDelete || isClear) 18.sp else 24.sp,
-                fontWeight = FontWeight.Black
+                fontSize = if (isDelete || isClear) 18.sp else 23.sp,
+                fontWeight = FontWeight.Black,
+                maxLines = 1,
+                softWrap = false
               )
             }
           }

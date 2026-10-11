@@ -114,14 +114,14 @@ fun LuckyWheelDialog(
 
   val rewards = remember {
     listOf(
-      WheelReward("10 Altın", "+10 🪙", "🪙", Color(0xFFD97706), 10, 0),
+      WheelReward("10 Altın", "+10", "🪙", Color(0xFFD97706), 10, 0),
       WheelReward("35 XP", "+35 XP", "⚡", Color(0xFF2563EB), 0, 35),
-      WheelReward("5 Altın", "+5 🪙", "🪙", Color(0xFF059669), 5, 0),
-      WheelReward("Gizemli Sandık", "🎁 Sürpriz", "🎁", Color(0xFF7C3AED), 12, 25),
-      WheelReward("25 Altın!", "🔥 +25", "👑", Color(0xFFDC2626), 25, 10),
+      WheelReward("5 Altın", "+5", "🪙", Color(0xFF059669), 5, 0),
+      WheelReward("Gizemli Sandık", "Sürpriz", "🎁", Color(0xFF7C3AED), 12, 25),
+      WheelReward("25 Altın!", "+25", "👑", Color(0xFFDC2626), 25, 10),
       WheelReward("50 XP", "+50 XP", "⚡", Color(0xFF0284C7), 0, 50),
-      WheelReward("8 Altın", "+8 🪙", "🪙", Color(0xFFEA580C), 8, 0),
-      WheelReward("Elmas Kutu", "💎 Sandık", "💎", Color(0xFFDB2777), 15, 45)
+      WheelReward("8 Altın", "+8", "🪙", Color(0xFFEA580C), 8, 0),
+      WheelReward("Elmas Kutu", "Elmas", "💎", Color(0xFFDB2777), 15, 45)
     )
   }
 
@@ -192,7 +192,8 @@ fun LuckyWheelDialog(
         ) {
           Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            modifier = Modifier.weight(1f)
           ) {
             Box(
               modifier = Modifier
@@ -204,19 +205,23 @@ fun LuckyWheelDialog(
             ) {
               Text(text = "🎰", fontSize = 20.sp)
             }
-            Column {
+            Column(modifier = Modifier.weight(1f)) {
               Text(
-                text = "GÜNLÜK ŞANS ÇARKI",
+                text = "Şans Çarkı",
                 color = NeonGold,
                 fontSize = 17.sp,
-                fontWeight = FontWeight.Black,
-                letterSpacing = 0.5.sp
+                fontWeight = FontWeight.ExtraBold,
+                maxLines = 1,
+                softWrap = false,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
               )
               Text(
                 text = "Her gün 1 ücretsiz ödül çevir!",
                 color = Color(0xFFCBD5E1),
                 fontSize = 11.sp,
-                fontWeight = FontWeight.Medium
+                fontWeight = FontWeight.Medium,
+                maxLines = 1,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
               )
             }
           }
@@ -292,35 +297,26 @@ fun LuckyWheelDialog(
                   strokeWidth = 2.5f
                 )
 
-                // Text/Emoji on slice
-                val midAngle = startAngle + sliceAngle / 2
-                val midRad = Math.toRadians(midAngle.toDouble())
+                // Text/Emoji on slice: rotate per slice so text stays perfectly radial and readable
+                val midAngle = startAngle + sliceAngle / 2f
+                rotate(degrees = midAngle, pivot = center) {
+                  drawContext.canvas.nativeCanvas.apply {
+                    val iconPaint = Paint().apply {
+                      textSize = 32f
+                      textAlign = Paint.Align.CENTER
+                    }
+                    val textPaint = Paint().apply {
+                      color = android.graphics.Color.WHITE
+                      textSize = 19f
+                      typeface = Typeface.DEFAULT_BOLD
+                      textAlign = Paint.Align.CENTER
+                      setShadowLayer(4f, 0f, 2f, android.graphics.Color.BLACK)
+                    }
 
-                // Draw emoji icon
-                val iconRadius = wheelRadius * 0.70f
-                val ix = center.x + (iconRadius * cos(midRad)).toFloat()
-                val iy = center.y + (iconRadius * sin(midRad)).toFloat()
-
-                drawContext.canvas.nativeCanvas.apply {
-                  val iconPaint = Paint().apply {
-                    textSize = 42f
-                    textAlign = Paint.Align.CENTER
+                    // Drawn outward along the slice's radial centerline: icon outward, value in comfortable middle
+                    drawText(item.icon, center.x + wheelRadius * 0.68f, center.y + 11f, iconPaint)
+                    drawText(item.valueText, center.x + wheelRadius * 0.40f, center.y + 7f, textPaint)
                   }
-                  drawText(item.icon, ix, iy + 14f, iconPaint)
-
-                  // Draw prize text label
-                  val labelRadius = wheelRadius * 0.42f
-                  val lx = center.x + (labelRadius * cos(midRad)).toFloat()
-                  val ly = center.y + (labelRadius * sin(midRad)).toFloat()
-
-                  val textPaint = Paint().apply {
-                    color = android.graphics.Color.WHITE
-                    textSize = 26f
-                    typeface = Typeface.DEFAULT_BOLD
-                    textAlign = Paint.Align.CENTER
-                    setShadowLayer(4f, 0f, 2f, android.graphics.Color.BLACK)
-                  }
-                  drawText(item.valueText, lx, ly + 8f, textPaint)
                 }
               }
 

@@ -25,6 +25,7 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -91,6 +92,14 @@ fun MainScreen(viewModel: GameViewModel) {
 
   val context = LocalContext.current
   val activity = context as? Activity
+
+  // Automatically display sync/reward status toasts cleanly to user
+  LaunchedEffect(syncStatusMessage) {
+    syncStatusMessage?.let { msg ->
+      android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
+      viewModel.clearSyncStatusMessage()
+    }
+  }
 
   // Handle Android back button
   BackHandler(enabled = screenState != ScreenState.START && screenState != ScreenState.HOME) {
@@ -292,6 +301,9 @@ fun MainScreen(viewModel: GameViewModel) {
             viewModel.dismissSettings()
             viewModel.openPrivacyPolicy()
           },
+          onRestartGame = {
+            viewModel.restartGameToHome()
+          },
           onDismiss = { viewModel.dismissSettings() }
         )
       }
@@ -332,7 +344,12 @@ fun MainScreen(viewModel: GameViewModel) {
         AdSimulationDialog(
           rewardType = adType,
           onRewardGranted = { viewModel.onAdRewardGranted(adType) },
-          onDismiss = { viewModel.dismissAdSimulation() }
+          onDismiss = {
+            viewModel.dismissAdSimulation()
+            if (adType == AdRewardType.EXTRA_SPIN) {
+              viewModel.openLuckyWheel()
+            }
+          }
         )
       }
     }

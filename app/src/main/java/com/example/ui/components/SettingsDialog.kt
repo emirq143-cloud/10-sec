@@ -51,6 +51,7 @@ fun SettingsDialog(
   onToggleSound: (Boolean) -> Unit,
   onToggleVibration: (Boolean) -> Unit,
   onOpenPrivacyPolicy: () -> Unit,
+  onRestartGame: () -> Unit = {},
   onDismiss: () -> Unit
 ) {
   Dialog(onDismissRequest = onDismiss) {
@@ -129,6 +130,17 @@ fun SettingsDialog(
             title = LocalizationManager.string("privacy_policy"),
             subtitle = "Google Play & AdMob",
             onClick = onOpenPrivacyPolicy
+          )
+
+          // Restart to Home / Reset Dialogs button
+          SettingClickableItem(
+            icon = Icons.Default.Settings,
+            title = "Oyunu Sıfırla & Başa Dön",
+            subtitle = "Ana ekrana döner ve pencereleri sıfırlar",
+            onClick = {
+              onRestartGame()
+              onDismiss()
+            }
           )
         }
 
