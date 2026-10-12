@@ -110,7 +110,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
   val avatars: StateFlow<List<AvatarItem>> = repository.avatars
   val dailyMissions: StateFlow<List<DailyMission>> = repository.dailyMissions
 
-  private val _screenState = MutableStateFlow(ScreenState.HOME)
+  private val _screenState = MutableStateFlow(ScreenState.START)
   val screenState: StateFlow<ScreenState> = _screenState.asStateFlow()
 
   private val _selectedTab = MutableStateFlow(0) // 0: Home, 1: Games, 2: Leaderboard, 3: Profile
@@ -174,7 +174,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     timerJob?.cancel()
     _activeSession.value = null
     resetAllDialogs()
-    _screenState.value = ScreenState.HOME
+    _screenState.value = ScreenState.START
     _selectedTab.value = 0
   }
 

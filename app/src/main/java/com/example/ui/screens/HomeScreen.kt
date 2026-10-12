@@ -17,13 +17,20 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.Image
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.FlashOn
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import com.example.R
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -187,6 +194,107 @@ fun HomeScreen(
                 tint = TextDarkSecondary,
                 modifier = Modifier.size(20.dp)
               )
+            }
+          }
+        }
+      }
+
+      // Feature: Hero Banner with prominent "OYUNA BAŞLA" button
+      item {
+        Box(
+          modifier = Modifier
+            .fillMaxWidth()
+            .shadow(12.dp, RoundedCornerShape(24.dp), spotColor = BluePrimary.copy(alpha = 0.35f))
+            .clip(RoundedCornerShape(24.dp))
+            .background(
+              Brush.horizontalGradient(
+                listOf(Color(0xFF0F172A), Color(0xFF1E293B), Color(0xFF2563EB))
+              )
+            )
+            .border(2.dp, SkyBlueAccent.copy(alpha = 0.6f), RoundedCornerShape(24.dp))
+            .clickable { onQuickPlay() }
+            .padding(18.dp)
+        ) {
+          Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+          ) {
+            Column(modifier = Modifier.weight(1f)) {
+              Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+              ) {
+                Box(
+                  modifier = Modifier
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(NeonGold)
+                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                ) {
+                  Text(
+                    text = "10 SANİYE",
+                    color = Color.Black,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Black
+                  )
+                }
+                Text(
+                  text = "⚡ Refleks & Zeka",
+                  color = SkyBlueAccent,
+                  fontSize = 11.sp,
+                  fontWeight = FontWeight.Bold
+                )
+              }
+
+              Spacer(modifier = Modifier.height(4.dp))
+
+              Text(
+                text = "TIME RUSH",
+                color = Color.White,
+                fontSize = 22.sp,
+                fontWeight = FontWeight.Black,
+                letterSpacing = 1.sp
+              )
+
+              Text(
+                text = "Hemen başla, rekorunu kır!",
+                color = Color.White.copy(alpha = 0.85f),
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Medium
+              )
+            }
+
+            Spacer(modifier = Modifier.width(10.dp))
+
+            // Prominent "OYUNA BAŞLA" Button
+            Button(
+              onClick = { onQuickPlay() },
+              colors = ButtonDefaults.buttonColors(containerColor = SkyBlueAccent),
+              shape = RoundedCornerShape(20.dp),
+              modifier = Modifier
+                .shadow(8.dp, RoundedCornerShape(20.dp), spotColor = SkyBlueAccent.copy(alpha = 0.7f))
+                .height(48.dp)
+            ) {
+              Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+              ) {
+                Icon(
+                  imageVector = Icons.Default.PlayArrow,
+                  contentDescription = "Başla",
+                  tint = Color.Black,
+                  modifier = Modifier.size(24.dp)
+                )
+                Text(
+                  text = "OYUNA BAŞLA",
+                  color = Color.Black,
+                  fontSize = 14.sp,
+                  fontWeight = FontWeight.Black,
+                  letterSpacing = 0.5.sp,
+                  maxLines = 1,
+                  softWrap = false
+                )
+              }
             }
           }
         }
@@ -632,6 +740,11 @@ fun HomeScreen(
             }
           }
         }
+      }
+
+      // AdMob Native Advanced Ad Card
+      item {
+        com.example.ui.components.NativeAdCard()
         Spacer(modifier = Modifier.height(16.dp))
       }
     }

@@ -102,9 +102,11 @@ fun MainScreen(viewModel: GameViewModel) {
   }
 
   // Handle Android back button
-  BackHandler(enabled = screenState != ScreenState.START && screenState != ScreenState.HOME) {
+  BackHandler(enabled = screenState != ScreenState.START) {
     if (screenState == ScreenState.GAME_PLAY || screenState == ScreenState.GAME_RESULT) {
       viewModel.backToHome()
+    } else if (screenState == ScreenState.HOME) {
+      viewModel.navigateTo(ScreenState.START)
     } else {
       viewModel.navigateTo(ScreenState.HOME)
     }

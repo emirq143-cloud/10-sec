@@ -24,6 +24,7 @@ object AdManager {
   // User's Real Google AdMob Ad Unit IDs
   const val REWARDED_AD_UNIT_ID = "ca-app-pub-4020568333948380/7841422376" // Ek süre
   const val REWARDED_INTERSTITIAL_AD_UNIT_ID = "ca-app-pub-4020568333948380/1209846673" // Ödüllü geçiş
+  const val NATIVE_AD_UNIT_ID = "ca-app-pub-4020568333948380/1635848931" // Yerel gelişmiş reklam
 
   private var isInitialized = false
   private var rewardedAd: RewardedAd? = null
