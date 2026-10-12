@@ -237,7 +237,7 @@ fun ProfileScreen(
             .padding(18.dp)
         ) {
           Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            // Header: 🧠 Beyin Performansı on left, overall score on right
+            // Header: 🧠 Beyin Performansı on left, overall score on right (Taşma yapmaz)
             Row(
               modifier = Modifier.fillMaxWidth(),
               verticalAlignment = Alignment.CenterVertically,
@@ -246,17 +246,20 @@ fun ProfileScreen(
               Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f, fill = false)
               ) {
                 Text(text = "🧠", fontSize = 22.sp)
                 Text(
                   text = "Beyin Performansı",
                   color = TextDark,
                   fontSize = 17.sp,
-                  fontWeight = FontWeight.Bold,
-                  maxLines = 1
+                  fontWeight = FontWeight.ExtraBold,
+                  maxLines = 1,
+                  softWrap = false
                 )
               }
+
+              Spacer(modifier = Modifier.width(8.dp))
 
               Box(
                 modifier = Modifier
@@ -266,10 +269,12 @@ fun ProfileScreen(
                   .padding(horizontal = 10.dp, vertical = 5.dp)
               ) {
                 Text(
-                  text = "${userProfile.overallBrainScore}/100",
+                  text = "${userProfile.overallBrainScore} / 100",
                   color = Color(0xFFB45309),
                   fontSize = 13.sp,
-                  fontWeight = FontWeight.Black
+                  fontWeight = FontWeight.Black,
+                  maxLines = 1,
+                  softWrap = false
                 )
               }
             }
@@ -353,55 +358,62 @@ fun ProfileScreen(
       // Karakterler / Avatarlar Bölümü (Matching column 12 in mockup)
       item {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+          // Başlık ve Bakiye Rozeti
           Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
           ) {
-            Row(
-              verticalAlignment = Alignment.CenterVertically,
-              horizontalArrangement = Arrangement.spacedBy(8.dp)
+            Text(
+              text = "Karakterler",
+              color = TextDark,
+              fontSize = 18.sp,
+              fontWeight = FontWeight.Bold,
+              maxLines = 1,
+              softWrap = false
+            )
+            Box(
+              modifier = Modifier
+                .clip(RoundedCornerShape(10.dp))
+                .background(Color(0xFFFEF3C7))
+                .border(1.dp, NeonGold, RoundedCornerShape(10.dp))
+                .padding(horizontal = 9.dp, vertical = 3.dp)
             ) {
               Text(
-                text = "Karakterler",
-                color = TextDark,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold
+                text = "🪙 ${userProfile.coins} Altın",
+                color = Color(0xFFB45309),
+                fontSize = 11.sp,
+                fontWeight = FontWeight.ExtraBold,
+                maxLines = 1,
+                softWrap = false
               )
+            }
+          }
+
+          // Filtre Sekmeleri: Tümü, Açılanlar, Kilitli (Genişliği eşit paylaşır, Kilitli asla alt alta yazılmaz)
+          Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+          ) {
+            listOf("Tümü", "Açılanlar", "Kilitli").forEach { filter ->
+              val isSelected = avatarFilter == filter
               Box(
                 modifier = Modifier
-                  .clip(RoundedCornerShape(10.dp))
-                  .background(Color(0xFFFEF3C7))
-                  .border(1.dp, NeonGold, RoundedCornerShape(10.dp))
-                  .padding(horizontal = 8.dp, vertical = 2.dp)
+                  .weight(1f)
+                  .clip(RoundedCornerShape(12.dp))
+                  .background(if (isSelected) BluePrimary else Color(0xFFE2E8F0))
+                  .clickable { avatarFilter = filter }
+                  .padding(vertical = 8.dp),
+                contentAlignment = Alignment.Center
               ) {
                 Text(
-                  text = "🪙 ${userProfile.coins}",
-                  color = Color(0xFFB45309),
-                  fontSize = 11.sp,
-                  fontWeight = FontWeight.ExtraBold
+                  text = filter,
+                  color = if (isSelected) Color.White else TextDarkSecondary,
+                  fontSize = 12.sp,
+                  fontWeight = FontWeight.Bold,
+                  maxLines = 1,
+                  softWrap = false
                 )
-              }
-            }
-
-            // Filter Tabs: Tümü, Açılanlar, Kilitli
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-              listOf("Tümü", "Açılanlar", "Kilitli").forEach { filter ->
-                val isSelected = avatarFilter == filter
-                Box(
-                  modifier = Modifier
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(if (isSelected) BluePrimary else Color(0xFFE2E8F0))
-                    .clickable { avatarFilter = filter }
-                    .padding(horizontal = 10.dp, vertical = 5.dp)
-                ) {
-                  Text(
-                    text = filter,
-                    color = if (isSelected) Color.White else TextDarkSecondary,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.SemiBold
-                  )
-                }
               }
             }
           }

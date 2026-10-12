@@ -90,6 +90,8 @@ fun LuckyWheelDialog(
   soundEnabled: Boolean,
   vibrationEnabled: Boolean,
   hasSpunToday: Boolean = false,
+  adSpinsUsedToday: Int = 0,
+  maxDailyAdSpins: Int = 1,
   onRewardClaimed: (coins: Int, xp: Int) -> Unit,
   onWatchAdForSpin: () -> Unit = {},
   onDismiss: () -> Unit
@@ -488,8 +490,9 @@ fun LuckyWheelDialog(
           }
         }
 
-        // Action Buttons: Spin or Watch Ad for extra spin
+        // Action Buttons: Spin or Watch Ad for extra spin (Günlük limitli)
         if (hasSpunToday) {
+          val canWatchAd = adSpinsUsedToday < maxDailyAdSpins
           Column(
             modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -501,39 +504,65 @@ fun LuckyWheelDialog(
                 .clip(RoundedCornerShape(14.dp))
                 .background(Color(0x33FFFFFF))
                 .border(1.dp, Color(0x33CBD5E1), RoundedCornerShape(14.dp))
-                .padding(vertical = 10.dp),
+                .padding(vertical = 10.dp, horizontal = 12.dp),
               contentAlignment = Alignment.Center
             ) {
               Text(
-                text = "⏰ Günlük Hak Kullanıldı (Yarın 00:00'da Yenilenir)",
+                text = if (canWatchAd) {
+                  "⏰ Günlük Ücretsiz Hak Kullanıldı"
+                } else {
+                  "🔒 Günlük Tüm Çark Hakları Tükendi (Yarın Yenilenir)"
+                },
                 color = Color(0xFFE2E8F0),
                 fontSize = 12.sp,
-                fontWeight = FontWeight.SemiBold
+                fontWeight = FontWeight.SemiBold,
+                textAlign = TextAlign.Center
               )
             }
 
-            Button(
-              onClick = onWatchAdForSpin,
-              colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFFF59E0B),
-                contentColor = Color.Black
-              ),
-              shape = RoundedCornerShape(18.dp),
-              modifier = Modifier
-                .fillMaxWidth()
-                .height(48.dp)
-                .shadow(8.dp, RoundedCornerShape(18.dp), spotColor = NeonGold.copy(alpha = 0.5f))
-                .testTag("watch_ad_for_spin_button")
-            ) {
-              Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            if (canWatchAd) {
+              Button(
+                onClick = onWatchAdForSpin,
+                colors = ButtonDefaults.buttonColors(
+                  containerColor = Color(0xFFF59E0B),
+                  contentColor = Color.Black
+                ),
+                shape = RoundedCornerShape(18.dp),
+                modifier = Modifier
+                  .fillMaxWidth()
+                  .height(48.dp)
+                  .shadow(8.dp, RoundedCornerShape(18.dp), spotColor = NeonGold.copy(alpha = 0.5f))
+                  .testTag("watch_ad_for_spin_button")
               ) {
-                Text(text = "🎬", fontSize = 16.sp)
+                Row(
+                  verticalAlignment = Alignment.CenterVertically,
+                  horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                  Text(text = "🎬", fontSize = 16.sp)
+                  Text(
+                    text = "Reklam İzle & Ekstra Çevir (${maxDailyAdSpins - adSpinsUsedToday} Hak)",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Black
+                  )
+                }
+              }
+            } else {
+              Button(
+                onClick = onDismiss,
+                colors = ButtonDefaults.buttonColors(
+                  containerColor = Color(0xFF334155),
+                  contentColor = Color.White
+                ),
+                shape = RoundedCornerShape(18.dp),
+                modifier = Modifier
+                  .fillMaxWidth()
+                  .height(46.dp)
+                  .testTag("wheel_close_button")
+              ) {
                 Text(
-                  text = "Reklam İzle & Ekstra Hak Al (+1)",
+                  text = "Yarın Tekrar Gel",
                   fontSize = 14.sp,
-                  fontWeight = FontWeight.Black
+                  fontWeight = FontWeight.Bold
                 )
               }
             }

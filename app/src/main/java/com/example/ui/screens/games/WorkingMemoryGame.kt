@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.sizeIn
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.CircleShape
@@ -227,35 +229,36 @@ fun WorkingMemoryGame(
     Spacer(modifier = Modifier.height(14.dp))
 
     // Sayı Gösterim / Slot Kutusu
-    BoxWithConstraints(
+    // Sayı Gösterim / Slot Kutusu (Tam ekran uyumlu, taşma veya kırpılma yapmaz)
+    Box(
       modifier = Modifier
         .fillMaxWidth()
         .padding(horizontal = 16.dp)
-        .shadow(14.dp, RoundedCornerShape(22.dp), spotColor = BluePrimary.copy(alpha = 0.4f))
+        .shadow(12.dp, RoundedCornerShape(22.dp), spotColor = BluePrimary.copy(alpha = 0.35f))
         .clip(RoundedCornerShape(22.dp))
         .background(CardWhite)
         .border(2.5.dp, BluePrimary, RoundedCornerShape(22.dp))
-        .padding(vertical = 14.dp, horizontal = 8.dp),
+        .padding(vertical = 14.dp, horizontal = 12.dp),
       contentAlignment = Alignment.Center
     ) {
       val totalCount = sequence.size
       val spacing = if (totalCount >= 5) 6.dp else 10.dp
-      val availableWidth = maxWidth - 16.dp // inner padding
-      val totalSpacingWidth = spacing * (totalCount - 1)
-      val adaptiveBoxSize = ((availableWidth - totalSpacingWidth) / totalCount).coerceIn(36.dp, 52.dp)
-      val numFontSize = if (totalCount >= 5) 20.sp else 26.sp
+      val numFontSize = if (totalCount >= 5) 20.sp else 24.sp
 
       if (isDisplayPhase) {
-        // Hafızaya alınacak sayılar
+        // Hafızaya alınacak sayılar (Tüm rakamlar tam sığacak şekilde weight ile esnek hizalanır)
         Row(
-          horizontalArrangement = Arrangement.spacedBy(spacing),
+          modifier = Modifier.fillMaxWidth(),
+          horizontalArrangement = Arrangement.spacedBy(spacing, Alignment.CenterHorizontally),
           verticalAlignment = Alignment.CenterVertically
         ) {
           sequence.forEach { num ->
             Box(
               modifier = Modifier
-                .size(adaptiveBoxSize)
-                .shadow(4.dp, RoundedCornerShape(12.dp), spotColor = BluePrimary)
+                .weight(1f, fill = false)
+                .sizeIn(minWidth = 38.dp, minHeight = 38.dp, maxWidth = 52.dp, maxHeight = 52.dp)
+                .aspectRatio(1f)
+                .shadow(3.dp, RoundedCornerShape(12.dp), spotColor = BluePrimary)
                 .clip(RoundedCornerShape(12.dp))
                 .background(Color(0xFFEFF6FF))
                 .border(2.dp, BluePrimary, RoundedCornerShape(12.dp)),
@@ -266,22 +269,26 @@ fun WorkingMemoryGame(
                 color = BluePrimary,
                 fontSize = numFontSize,
                 fontWeight = FontWeight.Black,
-                maxLines = 1
+                maxLines = 1,
+                softWrap = false
               )
             }
           }
         }
       } else {
-        // Kullanıcının girdiği sayılar (Slotlar)
+        // Kullanıcının girdiği sayılar (Slotlar - son rakam asla kesilmez)
         Row(
-          horizontalArrangement = Arrangement.spacedBy(spacing),
+          modifier = Modifier.fillMaxWidth(),
+          horizontalArrangement = Arrangement.spacedBy(spacing, Alignment.CenterHorizontally),
           verticalAlignment = Alignment.CenterVertically
         ) {
           repeat(totalCount) { i ->
             val hasDigit = i < enteredDigits.size
             Box(
               modifier = Modifier
-                .size(adaptiveBoxSize)
+                .weight(1f, fill = false)
+                .sizeIn(minWidth = 38.dp, minHeight = 38.dp, maxWidth = 52.dp, maxHeight = 52.dp)
+                .aspectRatio(1f)
                 .clip(RoundedCornerShape(12.dp))
                 .background(if (hasDigit) BluePrimary else Color(0xFFF1F5F9))
                 .border(
@@ -297,10 +304,11 @@ fun WorkingMemoryGame(
                   color = Color.White,
                   fontSize = numFontSize,
                   fontWeight = FontWeight.Black,
-                  maxLines = 1
+                  maxLines = 1,
+                  softWrap = false
                 )
               } else {
-                Text(text = "•", color = Color(0xFF94A3B8), fontSize = 18.sp, maxLines = 1)
+                Text(text = "•", color = Color(0xFF94A3B8), fontSize = 18.sp, maxLines = 1, softWrap = false)
               }
             }
           }
@@ -310,19 +318,19 @@ fun WorkingMemoryGame(
 
     Spacer(modifier = Modifier.height(8.dp))
 
-    // Keypad (1 to 9, Sil)
+    // Keypad (1 to 9, C, 0, ⌫)
     Box(
       modifier = Modifier
         .weight(1f)
         .fillMaxWidth()
-        .padding(horizontal = 24.dp),
+        .padding(horizontal = 20.dp),
       contentAlignment = Alignment.Center
     ) {
       val keypadItems = listOf(
         "1", "2", "3",
         "4", "5", "6",
         "7", "8", "9",
-        "C", "⌫", " "
+        "C", "0", "⌫"
       )
 
       LazyVerticalGrid(
@@ -332,61 +340,57 @@ fun WorkingMemoryGame(
       ) {
         items(keypadItems.size) { index ->
           val item = keypadItems[index]
-          if (item == " ") {
-            Spacer(modifier = Modifier.height(50.dp))
-          } else {
-            val isDelete = item == "⌫"
-            val isClear = item == "C"
+          val isDelete = item == "⌫"
+          val isClear = item == "C"
 
-            Box(
-              modifier = Modifier
-                .fillMaxWidth()
-                .height(50.dp)
-                .shadow(6.dp, RoundedCornerShape(18.dp), spotColor = if (isDelete) Color(0xFFEF4444) else BluePrimary)
-                .clip(RoundedCornerShape(18.dp))
-                .background(
-                  when {
-                    isDelete -> Color(0xFFEF4444)
-                    isClear -> Color(0xFF64748B)
-                    isDisplayPhase -> Color(0x66FFFFFF)
-                    else -> CardWhite
-                  }
-                )
-                .border(
-                  width = 2.dp,
-                  color = if (isDelete || isClear) Color.White else SkyBlueAccent,
-                  shape = RoundedCornerShape(18.dp)
-                )
-                .clickable(enabled = !isDisplayPhase) {
-                  when (item) {
-                    "⌫" -> {
-                      if (enteredDigits.isNotEmpty()) {
-                        enteredDigits.removeAt(enteredDigits.lastIndex)
-                      }
-                    }
-                    "C" -> {
-                      enteredDigits.clear()
-                    }
-                    else -> {
-                      val digit = item.toIntOrNull()
-                      if (digit != null && enteredDigits.size < sequence.size) {
-                        enteredDigits.add(digit)
-                        checkCompletion()
-                      }
-                    }
-                  }
-                },
-              contentAlignment = Alignment.Center
-            ) {
-              Text(
-                text = item,
-                color = if (isDelete || isClear) Color.White else TextDark,
-                fontSize = if (isDelete || isClear) 18.sp else 23.sp,
-                fontWeight = FontWeight.Black,
-                maxLines = 1,
-                softWrap = false
+          Box(
+            modifier = Modifier
+              .fillMaxWidth()
+              .height(48.dp)
+              .shadow(5.dp, RoundedCornerShape(16.dp), spotColor = if (isDelete) Color(0xFFEF4444) else BluePrimary)
+              .clip(RoundedCornerShape(16.dp))
+              .background(
+                when {
+                  isDelete -> Color(0xFFEF4444)
+                  isClear -> Color(0xFF64748B)
+                  isDisplayPhase -> Color(0x66FFFFFF)
+                  else -> CardWhite
+                }
               )
-            }
+              .border(
+                width = 2.dp,
+                color = if (isDelete || isClear) Color.White else SkyBlueAccent,
+                shape = RoundedCornerShape(16.dp)
+              )
+              .clickable(enabled = !isDisplayPhase) {
+                when (item) {
+                  "⌫" -> {
+                    if (enteredDigits.isNotEmpty()) {
+                      enteredDigits.removeAt(enteredDigits.lastIndex)
+                    }
+                  }
+                  "C" -> {
+                    enteredDigits.clear()
+                  }
+                  else -> {
+                    val digit = item.toIntOrNull()
+                    if (digit != null && enteredDigits.size < sequence.size) {
+                      enteredDigits.add(digit)
+                      checkCompletion()
+                    }
+                  }
+                }
+              },
+            contentAlignment = Alignment.Center
+          ) {
+            Text(
+              text = item,
+              color = if (isDelete || isClear) Color.White else TextDark,
+              fontSize = if (isDelete || isClear) 18.sp else 22.sp,
+              fontWeight = FontWeight.Black,
+              maxLines = 1,
+              softWrap = false
+            )
           }
         }
       }

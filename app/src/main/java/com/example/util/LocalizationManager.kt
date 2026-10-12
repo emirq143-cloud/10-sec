@@ -6,16 +6,15 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 enum class AppLanguage(val code: String, val displayName: String, val flag: String) {
-  TR("tr", "Türkçe", "🇹🇷"),
-  EN("en", "English", "🇺🇸")
+  TR("tr", "Türkçe", "🇹🇷")
 }
 
 object LocalizationManager {
   private val _currentLanguage = MutableStateFlow(AppLanguage.TR)
   val currentLanguage: StateFlow<AppLanguage> = _currentLanguage.asStateFlow()
 
-  fun setLanguage(context: Context, lang: AppLanguage) {
-    _currentLanguage.value = lang
+  fun setLanguage(context: Context, lang: AppLanguage = AppLanguage.TR) {
+    _currentLanguage.value = AppLanguage.TR
   }
 
   private val turkishStrings: Map<String, String> = mapOf(

@@ -108,11 +108,14 @@ class GameRepository(context: Context) {
   private val savedCoins: Int
   private val savedSelectedAvatar: String
   private val savedLastWheelDate: String
+  private val savedWheelAdSpins: Int
 
   init {
     savedCoins = prefs.getInt("user_coins", 75)
     savedSelectedAvatar = prefs.getString("selected_avatar", "default") ?: "default"
     savedLastWheelDate = prefs.getString("last_wheel_date", "") ?: ""
+    val isSameDay = (savedLastWheelDate == getTodayDateString())
+    savedWheelAdSpins = if (isSameDay) prefs.getInt("wheel_ad_spins_today", 0) else 0
     val defaultUnlocked = setOf("default")
     savedUnlockedIds = (prefs.getStringSet("unlocked_avatars", defaultUnlocked) ?: defaultUnlocked).toMutableSet()
     savedUnlockedIds.add("default")
@@ -142,7 +145,9 @@ class GameRepository(context: Context) {
       vibrationEnabled = prefs.getBoolean("user_vibration_enabled", true),
       luckySpinsCount = prefs.getInt("user_lucky_spins", 1),
       hasSpunWheelToday = (savedLastWheelDate == getTodayDateString()),
-      lastWheelSpinDate = savedLastWheelDate
+      lastWheelSpinDate = savedLastWheelDate,
+      wheelAdSpinsToday = savedWheelAdSpins,
+      maxDailyAdSpins = 1
     )
   )
   val userProfile: StateFlow<UserProfile> = _userProfile.asStateFlow()
@@ -222,6 +227,7 @@ class GameRepository(context: Context) {
       .putInt("user_coins", u.coins)
       .putString("selected_avatar", u.selectedAvatarId)
       .putString("last_wheel_date", u.lastWheelSpinDate)
+      .putInt("wheel_ad_spins_today", u.wheelAdSpinsToday)
       .putString("user_name", u.name)
       .putInt("user_level", u.level)
       .putInt("user_xp", u.currentXp)
@@ -321,7 +327,17 @@ class GameRepository(context: Context) {
   }
 
   fun grantExtraSpin() {
-    _userProfile.update { it.copy(hasSpunWheelToday = false, luckySpinsCount = it.luckySpinsCount + 1) }
+    _userProfile.update { current ->
+      if (current.wheelAdSpinsToday < current.maxDailyAdSpins) {
+        current.copy(
+          hasSpunWheelToday = false,
+          wheelAdSpinsToday = current.wheelAdSpinsToday + 1,
+          luckySpinsCount = current.luckySpinsCount + 1
+        )
+      } else {
+        current
+      }
+    }
     persistUserData()
   }
 

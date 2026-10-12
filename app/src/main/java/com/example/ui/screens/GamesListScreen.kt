@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -164,7 +165,7 @@ fun GameRowCard(
       .background(CardFrosted)
       .border(2.dp, game.category.accentColor, RoundedCornerShape(20.dp))
       .clickable { onClick() }
-      .padding(16.dp)
+      .padding(14.dp)
   ) {
     Row(
       modifier = Modifier.fillMaxWidth(),
@@ -173,12 +174,12 @@ fun GameRowCard(
     ) {
       Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(14.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
         modifier = Modifier.weight(1f)
       ) {
         Box(
           modifier = Modifier
-            .size(50.dp)
+            .size(46.dp)
             .clip(CircleShape)
             .background(game.category.accentColor.copy(alpha = 0.15f))
             .border(2.dp, game.category.accentColor, CircleShape),
@@ -191,25 +192,28 @@ fun GameRowCard(
               GameCategory.MEMORY -> "👁️"
               GameCategory.ATTENTION -> "🎯"
             },
-            fontSize = 26.sp
+            fontSize = 24.sp
           )
         }
 
         Column(modifier = Modifier.weight(1f)) {
+          Text(
+            text = game.title,
+            color = TextDark,
+            fontSize = 15.sp,
+            fontWeight = FontWeight.ExtraBold,
+            maxLines = 1,
+            softWrap = false,
+            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+          )
+
+          Spacer(modifier = Modifier.height(3.dp))
+
           Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
           ) {
-            Text(
-              text = game.title,
-              color = TextDark,
-              fontSize = 16.sp,
-              fontWeight = FontWeight.ExtraBold,
-              maxLines = 1,
-              overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-              modifier = Modifier.weight(1f, fill = false)
-            )
-
+            // Saniye Süresi Rozeti - Her zaman net ve görünür
             Box(
               modifier = Modifier
                 .clip(RoundedCornerShape(6.dp))
@@ -217,29 +221,35 @@ fun GameRowCard(
                 .padding(horizontal = 6.dp, vertical = 2.dp)
             ) {
               Text(
-                text = "${game.defaultDurationSeconds}s",
+                text = "⏱️ ${game.defaultDurationSeconds} sn",
                 color = game.category.accentColor,
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Bold
+                fontSize = 10.sp,
+                fontWeight = FontWeight.ExtraBold,
+                maxLines = 1,
+                softWrap = false
               )
             }
-          }
 
-          Text(
-            text = game.subtitle,
-            color = TextDarkSecondary,
-            fontSize = 12.sp,
-            maxLines = 1,
-            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-          )
+            Text(
+              text = game.category.title,
+              color = TextDarkSecondary,
+              fontSize = 11.sp,
+              fontWeight = FontWeight.Medium,
+              maxLines = 1,
+              softWrap = false
+            )
+          }
         }
       }
 
+      Spacer(modifier = Modifier.width(8.dp))
+
+      // OYNA Butonu - Asla alt alta yazılmaz, net ve belirgin
       Box(
         modifier = Modifier
           .clip(RoundedCornerShape(12.dp))
           .background(Brush.horizontalGradient(listOf(BluePrimary, SkyBlueAccent)))
-          .padding(horizontal = 12.dp, vertical = 8.dp),
+          .padding(horizontal = 14.dp, vertical = 9.dp),
         contentAlignment = Alignment.Center
       ) {
         Row(
@@ -247,14 +257,16 @@ fun GameRowCard(
           horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
           Text(
-            text = com.example.util.LocalizationManager.string("play_btn"),
+            text = "OYNA",
             color = Color.White,
             fontSize = 12.sp,
-            fontWeight = FontWeight.Black
+            fontWeight = FontWeight.Black,
+            maxLines = 1,
+            softWrap = false
           )
           Icon(
             imageVector = Icons.Default.PlayArrow,
-            contentDescription = com.example.util.LocalizationManager.string("play_btn"),
+            contentDescription = "Oyna",
             tint = Color.White,
             modifier = Modifier.size(16.dp)
           )

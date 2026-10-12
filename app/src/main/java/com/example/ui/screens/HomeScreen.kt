@@ -213,6 +213,24 @@ fun HomeScreen(
               .clickable { onOpenLuckyWheel() }
               .padding(14.dp)
           ) {
+            val isReadyToSpin = !userProfile.hasSpunWheelToday
+            val hasAdSpinAvailable = userProfile.canWatchAdForWheelSpin
+            val badgeText = when {
+              isReadyToSpin -> "HAZIR"
+              hasAdSpinAvailable -> "+1 HAK"
+              else -> "✓"
+            }
+            val badgeBg = when {
+              isReadyToSpin -> Color(0xFFDC2626)
+              hasAdSpinAvailable -> Color(0xFFD97706)
+              else -> Color(0xFF16A34A)
+            }
+            val statusText = when {
+              isReadyToSpin -> "Ücretsiz çevir!"
+              hasAdSpinAvailable -> "1 reklam hakkı"
+              else -> "Bugün tamamlandı"
+            }
+
             Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
               Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -220,17 +238,20 @@ fun HomeScreen(
                 modifier = Modifier.fillMaxWidth()
               ) {
                 Text(text = "🎰", fontSize = 22.sp)
+
                 Box(
                   modifier = Modifier
-                    .clip(CircleShape)
-                    .background(if (!userProfile.hasSpunWheelToday) Color(0xFFDC2626) else Color(0xFF16A34A))
-                    .padding(horizontal = 7.dp, vertical = 2.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(badgeBg)
+                    .padding(horizontal = 8.dp, vertical = 3.dp)
                 ) {
                   Text(
-                    text = if (!userProfile.hasSpunWheelToday) "HAZIR" else "✓",
+                    text = badgeText,
                     color = Color.White,
-                    fontSize = 9.sp,
-                    fontWeight = FontWeight.Black
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Black,
+                    maxLines = 1,
+                    softWrap = false
                   )
                 }
               }
@@ -243,7 +264,7 @@ fun HomeScreen(
                 softWrap = false
               )
               Text(
-                text = if (!userProfile.hasSpunWheelToday) "Ücretsiz çevir!" else "Bugün çevrildi",
+                text = statusText,
                 color = Color(0xFF92400E),
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Medium,
@@ -253,7 +274,7 @@ fun HomeScreen(
               )
               Spacer(modifier = Modifier.height(2.dp))
               Text(
-                text = if (!userProfile.hasSpunWheelToday) "ÇEVİR ➔" else "DETAY ➔",
+                text = if (isReadyToSpin) "ÇEVİR ➔" else "DETAY ➔",
                 color = Color(0xFFB45309),
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Black,
@@ -660,10 +681,11 @@ fun CategoryPillCard(
       )
       Text(
         text = "OYNA ➔",
-        color = textColor.copy(alpha = 0.8f),
-        fontSize = 10.sp,
-        fontWeight = FontWeight.Bold,
-        maxLines = 1
+        color = textColor.copy(alpha = 0.85f),
+        fontSize = 11.sp,
+        fontWeight = FontWeight.Black,
+        maxLines = 1,
+        softWrap = false
       )
     }
   }

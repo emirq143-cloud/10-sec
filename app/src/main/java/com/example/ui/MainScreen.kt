@@ -269,10 +269,14 @@ fun MainScreen(viewModel: GameViewModel) {
           soundEnabled = userProfile.soundEnabled,
           vibrationEnabled = userProfile.vibrationEnabled,
           hasSpunToday = userProfile.hasSpunWheelToday,
+          adSpinsUsedToday = userProfile.wheelAdSpinsToday,
+          maxDailyAdSpins = userProfile.maxDailyAdSpins,
           onRewardClaimed = { coins, xp -> viewModel.claimLuckyWheelReward(coins, xp) },
           onWatchAdForSpin = {
-            viewModel.dismissLuckyWheel()
-            viewModel.requestRewardedAdWithActivity(activity, AdRewardType.EXTRA_SPIN)
+            if (userProfile.wheelAdSpinsToday < userProfile.maxDailyAdSpins) {
+              viewModel.dismissLuckyWheel()
+              viewModel.requestRewardedAdWithActivity(activity, AdRewardType.EXTRA_SPIN)
+            }
           },
           onDismiss = { viewModel.dismissLuckyWheel() }
         )

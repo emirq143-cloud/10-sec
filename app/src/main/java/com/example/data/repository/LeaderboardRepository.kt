@@ -23,6 +23,8 @@ class LeaderboardRepository(
   private var db: FirebaseFirestore? = null,
   private var auth: FirebaseAuth? = null
 ) {
+  constructor(db: FirebaseFirestore?, auth: FirebaseAuth?) : this(null, db, auth)
+
   constructor(context: Context) : this(
     context.applicationContext,
     try {

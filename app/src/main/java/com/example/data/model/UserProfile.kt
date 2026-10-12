@@ -56,8 +56,12 @@ data class UserProfile(
   val reactionHistory: List<Int> = listOf(315, 298, 284, 272, 259, 278),
   val hasSpunWheelToday: Boolean = false,
   val luckySpinsCount: Int = 1,
-  val lastWheelSpinDate: String = ""
+  val lastWheelSpinDate: String = "",
+  val wheelAdSpinsToday: Int = 0,
+  val maxDailyAdSpins: Int = 1
 ) {
+  val canWatchAdForWheelSpin: Boolean
+    get() = hasSpunWheelToday && wheelAdSpinsToday < maxDailyAdSpins
   val league: League
     get() = League.fromScore(totalScore)
 

@@ -517,7 +517,7 @@ fun LeaderboardScreen(
 
                 Row(
                   modifier = Modifier.fillMaxWidth(),
-                  horizontalArrangement = Arrangement.SpaceEvenly,
+                  horizontalArrangement = Arrangement.spacedBy(8.dp),
                   verticalAlignment = Alignment.Bottom
                 ) {
                   // 2nd Place (Left)
@@ -529,10 +529,11 @@ fun LeaderboardScreen(
                       pedestalHeight = 70.dp,
                       badgeColor = Color(0xFFE2E8F0),
                       formatter = formatter,
-                      isWorldTab = !isTurkeyTab
+                      isWorldTab = !isTurkeyTab,
+                      modifier = Modifier.weight(1f)
                     )
                   } else {
-                    Spacer(modifier = Modifier.width(90.dp))
+                    Spacer(modifier = Modifier.weight(1f))
                   }
 
                   // 1st Place (Center - Highest)
@@ -543,7 +544,8 @@ fun LeaderboardScreen(
                     pedestalHeight = 96.dp,
                     badgeColor = Color(0xFFFFD700),
                     formatter = formatter,
-                    isWorldTab = !isTurkeyTab
+                    isWorldTab = !isTurkeyTab,
+                    modifier = Modifier.weight(1f)
                   )
 
                   // 3rd Place (Right)
@@ -555,10 +557,11 @@ fun LeaderboardScreen(
                       pedestalHeight = 54.dp,
                       badgeColor = Color(0xFFFDBA74),
                       formatter = formatter,
-                      isWorldTab = !isTurkeyTab
+                      isWorldTab = !isTurkeyTab,
+                      modifier = Modifier.weight(1f)
                     )
                   } else {
-                    Spacer(modifier = Modifier.width(90.dp))
+                    Spacer(modifier = Modifier.weight(1f))
                   }
                 }
               }
@@ -839,11 +842,12 @@ fun PodiumColumn(
   pedestalHeight: androidx.compose.ui.unit.Dp,
   badgeColor: Color,
   formatter: NumberFormat,
-  isWorldTab: Boolean = false
+  isWorldTab: Boolean = false,
+  modifier: Modifier = Modifier
 ) {
   Column(
     horizontalAlignment = Alignment.CenterHorizontally,
-    modifier = Modifier.width(96.dp)
+    modifier = modifier.padding(horizontal = 2.dp)
   ) {
     // Medal & Avatar
     Text(text = medal, fontSize = 20.sp)
@@ -855,6 +859,7 @@ fun PodiumColumn(
       fontSize = 12.sp,
       fontWeight = FontWeight.Bold,
       maxLines = 1,
+      softWrap = false,
       overflow = TextOverflow.Ellipsis,
       textAlign = TextAlign.Center
     )
@@ -865,6 +870,7 @@ fun PodiumColumn(
         color = Color(0xFF94A3B8),
         fontSize = 10.sp,
         maxLines = 1,
+        softWrap = false,
         overflow = TextOverflow.Ellipsis
       )
     } else {
@@ -873,6 +879,7 @@ fun PodiumColumn(
         color = entry.league.color,
         fontSize = 10.sp,
         maxLines = 1,
+        softWrap = false,
         overflow = TextOverflow.Ellipsis
       )
     }
@@ -886,7 +893,9 @@ fun PodiumColumn(
         text = formatter.format(entry.score),
         color = NeonGold,
         fontSize = 12.sp,
-        fontWeight = FontWeight.ExtraBold
+        fontWeight = FontWeight.ExtraBold,
+        maxLines = 1,
+        softWrap = false
       )
     }
 
@@ -895,7 +904,7 @@ fun PodiumColumn(
     // Pedestal Block
     Box(
       modifier = Modifier
-        .width(80.dp)
+        .fillMaxWidth(0.9f)
         .height(pedestalHeight)
         .shadow(4.dp, RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp))
         .clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp))
