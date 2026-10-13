@@ -3,6 +3,6 @@
     <item
         android:width="66dp"
         android:height="66dp"
-        android:drawable="@drawable/game_logo_ten_sec_1791565905718"
+        android:drawable="@drawable/game_logo_ten_sec_transparent"
         android:gravity="center" />
 </layer-list>
