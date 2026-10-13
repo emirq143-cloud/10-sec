@@ -25,8 +25,8 @@ class GoogleAuthManager(private val initialContext: Context? = null) {
   fun getAuth(context: Context? = initialContext): FirebaseAuth? {
     return try {
       val appContext = context?.applicationContext ?: initialContext?.applicationContext
-      if (appContext != null && FirebaseApp.getApps(appContext).isEmpty()) {
-        FirebaseApp.initializeApp(appContext)
+      if (appContext != null) {
+        FirebaseInitializer.init(appContext)
       }
       FirebaseAuth.getInstance()
     } catch (e: Throwable) {
@@ -55,7 +55,10 @@ class GoogleAuthManager(private val initialContext: Context? = null) {
 
   suspend fun signInWithGoogle(context: Context): Result<FirebaseUser> {
     val firebaseAuth = getAuth(context) ?: return Result.failure(
-      IllegalStateException("Firebase başlatılamadı. Lütfen Google Play Hizmetlerini ve internetinizi kontrol edin.")
+      IllegalStateException(
+        FirebaseInitializer.getLastError()?.let { "Firebase başlatılamadı ($it). Lütfen Google Play Hizmetlerini kontrol edin." }
+          ?: "Firebase başlatılamadı. Lütfen Google Play Hizmetlerini ve internetinizi kontrol edin."
+      )
     )
 
     return runCatching {

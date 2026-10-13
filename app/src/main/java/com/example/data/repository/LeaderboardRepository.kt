@@ -3,6 +3,7 @@ package com.example.data.repository
 import android.content.Context
 import android.util.Log
 import com.example.R
+import com.example.data.auth.FirebaseInitializer
 import com.example.data.model.FirestoreLeaderboardEntry
 import com.example.util.OperationType
 import com.example.util.handleFirestoreError
@@ -29,9 +30,7 @@ class LeaderboardRepository(
     context.applicationContext,
     try {
       val appContext = context.applicationContext
-      if (FirebaseApp.getApps(appContext).isEmpty()) {
-        FirebaseApp.initializeApp(appContext)
-      }
+      FirebaseInitializer.init(appContext)
       val dbId = try {
         appContext.getString(R.string.firestore_database_id)
       } catch (e: Exception) {
@@ -48,9 +47,7 @@ class LeaderboardRepository(
     },
     try {
       val appContext = context.applicationContext
-      if (FirebaseApp.getApps(appContext).isEmpty()) {
-        FirebaseApp.initializeApp(appContext)
-      }
+      FirebaseInitializer.init(appContext)
       FirebaseAuth.getInstance()
     } catch (e: Throwable) {
       Log.w("LeaderboardRepository", "FirebaseAuth not available: ${e.message}")
@@ -61,8 +58,8 @@ class LeaderboardRepository(
   fun getDatabase(): FirebaseFirestore? {
     if (db != null) return db
     val appContext = context?.applicationContext
-    if (appContext != null && FirebaseApp.getApps(appContext).isEmpty()) {
-      try { FirebaseApp.initializeApp(appContext) } catch (_: Throwable) {}
+    if (appContext != null) {
+      FirebaseInitializer.init(appContext)
     }
     return try {
       val dbId = try {
@@ -83,8 +80,8 @@ class LeaderboardRepository(
   fun getFirebaseAuth(): FirebaseAuth? {
     if (auth != null) return auth
     val appContext = context?.applicationContext
-    if (appContext != null && FirebaseApp.getApps(appContext).isEmpty()) {
-      try { FirebaseApp.initializeApp(appContext) } catch (_: Throwable) {}
+    if (appContext != null) {
+      FirebaseInitializer.init(appContext)
     }
     return try {
       auth = FirebaseAuth.getInstance()
