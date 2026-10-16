@@ -189,39 +189,46 @@ fun GameResultScreen(
         }
       }
 
-      // Monetization / Rewarded Ad Button (Direct match to user request for Play Store Ads)
-      if (session.isVictory) {
+      // Monetization / Rewarded Ad Button (2X Reward for Score & XP)
+      if (session.currentScore > 0 || session.xpGained > 0 || session.isVictory) {
+        val isClaimed = session.isDoubleRewardClaimed
         Button(
           onClick = onWatchAdDouble,
-          colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF59E0B)),
+          enabled = !isClaimed,
+          colors = ButtonDefaults.buttonColors(
+            containerColor = Color(0xFFF59E0B),
+            disabledContainerColor = Color(0xFF065F46)
+          ),
           shape = RoundedCornerShape(20.dp),
           modifier = Modifier
             .fillMaxWidth()
             .height(52.dp)
-            .shadow(8.dp, RoundedCornerShape(20.dp), spotColor = NeonGold.copy(alpha = 0.5f))
+            .shadow(if (!isClaimed) 8.dp else 0.dp, RoundedCornerShape(20.dp), spotColor = NeonGold.copy(alpha = 0.5f))
         ) {
           Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
           ) {
-            Text(text = "🎬", fontSize = 18.sp)
+            Text(text = if (isClaimed) "✅" else "🎬", fontSize = 18.sp)
             Column(horizontalAlignment = Alignment.Start) {
               Text(
-                text = LocalizationManager.string("watch_ad_2x"),
-                color = Color.Black,
+                text = if (isClaimed) "✓ 2X Ödül Alındı" else LocalizationManager.string("watch_ad_2x"),
+                color = if (isClaimed) Color.White else Color.Black,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Black
               )
               Text(
-                text = LocalizationManager.string("watch_ad_2x_sub", session.currentScore),
-                color = Color(0xFF78350F),
+                text = if (isClaimed) "Skor ve XP 2 katına çıkarıldı!" else LocalizationManager.string("watch_ad_2x_sub", session.currentScore),
+                color = if (isClaimed) Color(0xFFA7F3D0) else Color(0xFF78350F),
                 fontSize = 10.sp,
                 fontWeight = FontWeight.Bold
               )
             }
           }
         }
-      } else {
+      }
+
+      if (!session.isVictory && !session.hasUsedRevive) {
         Button(
           onClick = onWatchAdSecondChance,
           colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981)),

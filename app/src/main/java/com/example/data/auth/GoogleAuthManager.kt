@@ -8,10 +8,10 @@ import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.exceptions.GetCredentialCancellationException
 import androidx.credentials.exceptions.GetCredentialException
-import com.example.R
 import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.firebase.FirebaseApp
+import com.google.firebase.FirebaseOptions
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GoogleAuthProvider
@@ -22,15 +22,35 @@ import kotlinx.coroutines.tasks.await
 
 class GoogleAuthManager(private val initialContext: Context? = null) {
 
+  private var lastInitError: String? = null
+
   fun getAuth(context: Context? = initialContext): FirebaseAuth? {
     return try {
       val appContext = context?.applicationContext ?: initialContext?.applicationContext
-      if (appContext != null) {
-        FirebaseInitializer.init(appContext)
+
+      // Firebase henüz başlamadıysa garanti başlat
+      if (appContext != null && FirebaseApp.getApps(appContext).isEmpty()) {
+        try {
+          FirebaseApp.initializeApp(appContext)
+        } catch (e: Exception) {
+          Log.w("GoogleAuthManager", "Default initializeApp failed, fallback with options: ${e.message}")
+          try {
+            val options = FirebaseOptions.Builder()
+              .setApplicationId("1:703490968047:android:a1c0d16ff63d76e33d0628")
+              .setProjectId("tensecchallenge-nvqkz")
+              .setApiKey("dummy-auth-key")
+              .build()
+            FirebaseApp.initializeApp(appContext, options)
+          } catch (e2: Exception) {
+            lastInitError = e2.message
+            Log.e("GoogleAuthManager", "Firebase initialize options failed", e2)
+          }
+        }
       }
       FirebaseAuth.getInstance()
     } catch (e: Throwable) {
-      Log.w("GoogleAuthManager", "FirebaseAuth not available: ${e.message}")
+      lastInitError = e.message
+      Log.e("GoogleAuthManager", "FirebaseAuth.getInstance() failed: ${e.message}", e)
       null
     }
   }
@@ -55,16 +75,12 @@ class GoogleAuthManager(private val initialContext: Context? = null) {
 
   suspend fun signInWithGoogle(context: Context): Result<FirebaseUser> {
     val firebaseAuth = getAuth(context) ?: return Result.failure(
-      IllegalStateException(
-        FirebaseInitializer.getLastError()?.let { "Firebase başlatılamadı ($it). Lütfen Google Play Hizmetlerini kontrol edin." }
-          ?: "Firebase başlatılamadı. Lütfen Google Play Hizmetlerini ve internetinizi kontrol edin."
-      )
+      IllegalStateException("Firebase başlatılamadı: ${lastInitError ?: "Google Play Hizmetleri veya internet bağlantısını kontrol edin."}")
     )
 
     return runCatching {
       val credentialManager = CredentialManager.create(context)
-      
-      // Attempt to retrieve Web Client ID from generated resources or fallback constant
+
       val webClientId = try {
         val resId = context.resources.getIdentifier("default_web_client_id", "string", context.packageName)
         if (resId != 0) context.getString(resId) else "703490968047-fvdk38smirt651rgtd6lm7jtnjpbo3m8.apps.googleusercontent.com"
@@ -82,10 +98,17 @@ class GoogleAuthManager(private val initialContext: Context? = null) {
       val result = try {
         credentialManager.getCredential(context = context, request = request)
       } catch (e: GetCredentialCancellationException) {
+        Log.w("GoogleAuthManager", "GetCredentialCancellationException: ${e.message}", e)
         throw IllegalStateException("Giriş işlemi iptal edildi.")
       } catch (e: GetCredentialException) {
-        Log.e("GoogleAuthManager", "CredentialManager hatası: ${e.message}", e)
-        throw IllegalStateException("Google hesabı seçilemedi: ${e.message ?: "İşlem iptal edildi"}")
+        Log.e("GoogleAuthManager", "CredentialManager hatası: type=${e.type}, message=${e.message}", e)
+        val detailedMsg = when {
+          e.type.contains("DeveloperError", ignoreCase = true) || e.message?.contains("10") == true ->
+            "Google doğrulama hatası (Play Console SHA-1 parmak izi yapılandırmasını kontrol edin)."
+          else ->
+            "Google hesabı seçilemedi: ${e.message ?: "İşlem iptal edildi"}"
+        }
+        throw IllegalStateException(detailedMsg)
       }
 
       val credential = result.credential

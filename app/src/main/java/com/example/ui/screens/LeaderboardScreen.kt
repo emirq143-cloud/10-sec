@@ -372,7 +372,7 @@ fun LeaderboardScreen(
 
               Column {
                 Text(
-                  text = currentUser.displayName ?: userProfile.name,
+                  text = userProfile.name,
                   color = Color.White,
                   fontSize = 13.sp,
                   fontWeight = FontWeight.Bold,

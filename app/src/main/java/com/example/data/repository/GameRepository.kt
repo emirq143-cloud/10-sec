@@ -123,7 +123,7 @@ class GameRepository(context: Context) {
 
   private val _userProfile = MutableStateFlow(
     UserProfile(
-      name = prefs.getString("user_name", "Emir") ?: "Emir",
+      name = prefs.getString("user_name", "Oyuncu") ?: "Oyuncu",
       level = prefs.getInt("user_level", 7),
       currentXp = prefs.getInt("user_xp", 720),
       maxXp = prefs.getInt("user_max_xp", 1000),

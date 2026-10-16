@@ -83,15 +83,22 @@ fun StartScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.padding(top = 40.dp)
       ) {
-        Image(
-          painter = painterResource(id = R.drawable.game_logo_ten_sec_transparent),
-          contentDescription = "10 SEC Game Logo",
+        Box(
           modifier = Modifier
-            .size(220.dp)
-            .shadow(20.dp, CircleShape, spotColor = SkyBlueAccent.copy(alpha = 0.5f))
-            .clip(CircleShape),
-          contentScale = ContentScale.Fit
-        )
+            .size(136.dp)
+            .shadow(24.dp, CircleShape, spotColor = SkyBlueAccent.copy(alpha = 0.6f))
+            .clip(CircleShape)
+            .background(Color(0xFF0F172A))
+            .border(3.dp, NeonGold, CircleShape),
+          contentAlignment = Alignment.Center
+        ) {
+          Image(
+            painter = painterResource(id = R.drawable.game_logo_ten_sec_1791565905718),
+            contentDescription = "10 SEC Logo Rozeti",
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop
+          )
+        }
 
         Spacer(modifier = Modifier.height(14.dp))
 

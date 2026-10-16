@@ -65,7 +65,8 @@ data class GamePlaySession(
   val accuracyPercent: Int = 100,
   val feedbackText: String = "",
   val xpGained: Int = 0,
-  val hasUsedRevive: Boolean = false
+  val hasUsedRevive: Boolean = false,
+  val isDoubleRewardClaimed: Boolean = false
 )
 
 class GameViewModel(application: Application) : AndroidViewModel(application) {
@@ -178,34 +179,64 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     _selectedTab.value = 0
   }
 
+  private fun isNetworkAvailable(context: Context): Boolean {
+    val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as? android.net.ConnectivityManager
+    val activeNetwork = connectivityManager?.activeNetwork ?: return false
+    val capabilities = connectivityManager.getNetworkCapabilities(activeNetwork) ?: return false
+    return capabilities.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_INTERNET)
+  }
+
   fun requestRewardedAd(type: AdRewardType) {
-    _showAdSimulation.value = type
+    // Direct rewarded ad request
+  }
+
+  fun resumeGameAfterRevive() {
+    val session = _activeSession.value
+    if (session != null && session.hasUsedRevive) {
+      _activeSession.value = session.copy(isTimerPaused = false)
+      startTimer()
+    }
   }
 
   fun requestRewardedAdWithActivity(activity: Activity?, type: AdRewardType) {
     if (_isAdFree.value) {
       onAdRewardGranted(type)
+      if (type == AdRewardType.EXTRA_SPIN) openLuckyWheel()
+      else if (type == AdRewardType.SECOND_CHANCE) resumeGameAfterRevive()
       return
     }
-    // Check if real AdMob rewarded ad is loaded and ready
-    if (AdManager.isRewardedAdReady() && activity != null) {
+
+    if (activity != null) {
+      if (!isNetworkAvailable(activity)) {
+        val msg = "İnternet bağlantısı yok. Reklam izlemek için lütfen internetinizi kontrol edin."
+        _syncStatusMessage.value = msg
+        android.widget.Toast.makeText(activity, msg, android.widget.Toast.LENGTH_SHORT).show()
+        return
+      }
+
       AdManager.showRewardedAd(
         activity = activity,
         onRewardEarned = { onAdRewardGranted(type) },
-        onFallback = {
-          // If AdMob live ad fails or still loading, show simulation player
-          _showAdSimulation.value = type
+        onAdClosed = {
+          when (type) {
+            AdRewardType.EXTRA_SPIN -> openLuckyWheel()
+            AdRewardType.SECOND_CHANCE -> resumeGameAfterRevive()
+            else -> {}
+          }
+        },
+        onAdNotReady = {
+          val msg = "Reklam hazırlanıyor, lütfen birkaç saniye sonra tekrar deneyin."
+          _syncStatusMessage.value = msg
+          android.widget.Toast.makeText(activity, msg, android.widget.Toast.LENGTH_SHORT).show()
+          AdManager.loadRewardedAd(activity)
+          AdManager.loadRewardedInterstitialAd(activity)
         }
       )
-    } else {
-      // In web emulator / development environment, display realistic simulated video player
-      // so user experiences the video countdown and receives reward upon completion!
-      _showAdSimulation.value = type
     }
   }
 
   fun handleGameTransition(activity: Activity?, onProceed: () -> Unit) {
-    if (_isAdFree.value || gamesPlayedCount <= 0 || gamesPlayedCount % 2 != 0) {
+    if (_isAdFree.value || gamesPlayedCount <= 0 || gamesPlayedCount % 4 != 0) {
       onProceed()
       return
     }
@@ -215,7 +246,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         onProceed()
       }
     } else {
-      // If real AdMob ad is not ready yet, do NOT show a fake test dialog; smoothly proceed!
+      // If real AdMob ad is not ready yet, smoothly proceed without blocking user
       onProceed()
     }
   }
@@ -237,7 +268,10 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
 
   fun triggerReviveRewardedAd(activity: Activity?) {
     _showReviveDialog.value = null
-    requestRewardedAdWithActivity(activity, AdRewardType.SECOND_CHANCE)
+    val session = _activeSession.value
+    if (session != null && !session.hasUsedRevive) {
+      requestRewardedAdWithActivity(activity, AdRewardType.SECOND_CHANCE)
+    }
   }
 
   fun skipReviveAndEndGame() {
@@ -250,27 +284,31 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     when (type) {
       AdRewardType.DOUBLE_REWARD -> {
         val session = _activeSession.value
-        if (session != null) {
+        if (session != null && !session.isDoubleRewardClaimed) {
           repository.addBonusReward(
             scoreBonus = session.currentScore,
             xpBonus = session.xpGained,
             coinsBonus = 50
+          )
+          _activeSession.value = session.copy(
+            currentScore = session.currentScore * 2,
+            xpGained = session.xpGained * 2,
+            isDoubleRewardClaimed = true
           )
         }
       }
       AdRewardType.SECOND_CHANCE -> {
         _showReviveDialog.value = null
         val session = _activeSession.value
-        if (session != null) {
+        if (session != null && !session.hasUsedRevive) {
           _activeSession.value = session.copy(
             isFinished = false,
-            isTimerPaused = false,
+            isTimerPaused = true, // Paused while ad is on screen; starts in resumeGameAfterRevive
             hasUsedRevive = true,
             remainingSeconds = 5f,
             feedbackText = "🔥 Can Yenilendi! +5 Saniye Süre!"
           )
           _screenState.value = ScreenState.GAME_PLAY
-          startTimer()
         }
       }
       AdRewardType.EXTRA_SPIN -> {
@@ -335,21 +373,36 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     }
   }
 
+  private fun formatDisplayNameForPrivacy(fullName: String): String {
+    val parts = fullName.trim().split("\\s+".toRegex()).filter { it.isNotBlank() }
+    return when {
+      parts.isEmpty() -> "Oyuncu"
+      parts.size == 1 -> parts[0]
+      else -> "${parts.first()} ${parts.last().take(1).uppercase(java.util.Locale.forLanguageTag("tr-TR"))}."
+    }
+  }
+
   fun signInWithGoogle(context: Context, onResult: (Boolean, String?) -> Unit) {
     viewModelScope.launch {
       val result = authManager.signInWithGoogle(context)
       if (result.isSuccess) {
         val fbUser = result.getOrNull()
         if (fbUser != null && !fbUser.displayName.isNullOrBlank()) {
-          val candidate = fbUser.displayName!!
-          if (!com.example.util.ProfanityFilter.containsProfanity(candidate)) {
-            repository.updateUserName(candidate)
+          val fullGoogleName = fbUser.displayName!!
+          val formattedPrivacyName = formatDisplayNameForPrivacy(fullGoogleName)
+          val currentProfileName = userProfile.value.name
+          // If current profile name is default ("Oyuncu" / "Emir") or empty, update to anonymized format (e.g. "Ahmet K.")
+          if (currentProfileName == "Oyuncu" || currentProfileName == "Emir" || currentProfileName.isBlank() || currentProfileName == fullGoogleName) {
+            if (!com.example.util.ProfanityFilter.containsProfanity(formattedPrivacyName)) {
+              repository.updateUserName(formattedPrivacyName)
+            }
           }
         }
         submitScoreToCloud()
         onResult(true, null)
       } else {
         val msg = result.exceptionOrNull()?.localizedMessage ?: "Google ile giriş yapılamadı"
+        _syncStatusMessage.value = "Giriş Hatası: $msg"
         onResult(false, msg)
       }
     }
@@ -376,7 +429,10 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     val avatarId = profile.selectedAvatarId
 
     val brainScore = profile.overallBrainScore * 10 + profile.totalScore
-    val rawName = user.displayName?.takeIf { it.isNotBlank() } ?: profile.name
+    // Use player's chosen profile nickname (or anonymized name) for public cloud leaderboard
+    val rawName = profile.name.takeIf { it.isNotBlank() }
+      ?: user.displayName?.let { formatDisplayNameForPrivacy(it) }
+      ?: "Oyuncu"
     val cleanName = if (com.example.util.ProfanityFilter.containsProfanity(rawName)) "Oyuncu" else rawName
 
     _isSubmittingScore.value = true

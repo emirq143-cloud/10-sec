@@ -16,22 +16,43 @@ android {
     applicationId = "com.aistudio.tensecchallenge.nvqkz"
     minSdk = 24
     targetSdk = 36
-    versionCode = 2
-    versionName = "1.1"
+    versionCode = 3
+    versionName = "1.2"
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
 
   signingConfigs {
     create("release") {
-      val keystorePath = System.getenv("KEYSTORE_PATH") ?: "${rootDir}/my-upload-key.jks"
-      storeFile = file(keystorePath)
-      storePassword = System.getenv("STORE_PASSWORD")
-      keyAlias = "upload"
-      keyPassword = System.getenv("KEY_PASSWORD")
+      val envPath = System.getenv("KEYSTORE_PATH")
+      val desktopKey = file("${System.getProperty("user.home")}/Desktop/timerush_key.jks")
+      val rootKey = file("${rootDir}/my-upload-key.jks")
+      val selectedFile = when {
+        !envPath.isNullOrBlank() -> file(envPath)
+        desktopKey.exists() -> desktopKey
+        rootKey.exists() -> rootKey
+        else -> null
+      }
+      val storePass = System.getenv("STORE_PASSWORD")
+      val keyPass = System.getenv("KEY_PASSWORD")
+      if (selectedFile != null && selectedFile.exists() && !storePass.isNullOrBlank() && !keyPass.isNullOrBlank()) {
+        storeFile = selectedFile
+        storePassword = storePass
+        keyAlias = System.getenv("KEY_ALIAS") ?: "upload"
+        keyPassword = keyPass
+      } else {
+        val rootKeystore = file("${rootDir}/debug.keystore")
+        val userKeystore = file("${System.getProperty("user.home")}/.android/debug.keystore")
+        storeFile = if (rootKeystore.exists()) rootKeystore else userKeystore
+        storePassword = "android"
+        keyAlias = "androiddebugkey"
+        keyPassword = "android"
+      }
     }
     create("debugConfig") {
-      storeFile = file("${rootDir}/debug.keystore")
+      val rootKeystore = file("${rootDir}/debug.keystore")
+      val userKeystore = file("${System.getProperty("user.home")}/.android/debug.keystore")
+      storeFile = if (rootKeystore.exists()) rootKeystore else userKeystore
       storePassword = "android"
       keyAlias = "androiddebugkey"
       keyPassword = "android"
@@ -41,7 +62,7 @@ android {
   buildTypes {
     release {
       isCrunchPngs = false
-      isMinifyEnabled = false
+      isMinifyEnabled = true
       proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
       signingConfig = signingConfigs.getByName("release")
     }
@@ -109,8 +130,8 @@ dependencies {
   implementation(libs.androidx.credentials)
   implementation(libs.androidx.credentials.play.services)
   implementation(libs.googleid)
-  implementation(libs.firebase.appcheck.recaptcha)
-  implementation(libs.firebase.appcheck.debug)
+  // implementation(libs.firebase.appcheck.recaptcha)
+  // implementation(libs.firebase.appcheck.debug)
   implementation(libs.kotlinx.coroutines.android)
   implementation(libs.kotlinx.coroutines.core)
   implementation(libs.logging.interceptor)
@@ -138,4 +159,6 @@ dependencies {
 
 tasks.withType<Test> {
   failFast = true
+  systemProperty("user.language", "en")
+  systemProperty("user.country", "US")
 }
