@@ -63,6 +63,12 @@ object AdManager {
     val appContext = context.applicationContext
     runOnMainThread {
       try {
+        // Protect developer account: Always mark emulator traffic as safe test ads
+        val testConfig = com.google.android.gms.ads.RequestConfiguration.Builder()
+          .setTestDeviceIds(listOf(AdRequest.DEVICE_ID_EMULATOR))
+          .build()
+        MobileAds.setRequestConfiguration(testConfig)
+
         MobileAds.initialize(appContext) { status ->
           isInitialized = true
           Log.d(TAG, "AdMob SDK Initialized: $status")

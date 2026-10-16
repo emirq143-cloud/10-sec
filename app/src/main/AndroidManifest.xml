@@ -40,6 +40,11 @@
         <meta-data
             android:name="com.google.android.gms.ads.flag.OPTIMIZE_AD_LOADING"
             android:value="true"/>
+
+        <!-- Google Ad Services (Privacy Sandbox) Attribution -->
+        <property
+            android:name="android.adservices.AD_SERVICES_CONFIG"
+            android:resource="@xml/gma_ad_services_config" />
     </application>
 
 </manifest>
