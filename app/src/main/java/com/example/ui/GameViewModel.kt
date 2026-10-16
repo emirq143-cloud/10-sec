@@ -232,6 +232,8 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
           AdManager.loadRewardedInterstitialAd(activity)
         }
       )
+    } else {
+      _syncStatusMessage.value = "Reklam şu an açılamadı."
     }
   }
 
@@ -267,7 +269,6 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
   }
 
   fun triggerReviveRewardedAd(activity: Activity?) {
-    _showReviveDialog.value = null
     val session = _activeSession.value
     if (session != null && !session.hasUsedRevive) {
       requestRewardedAdWithActivity(activity, AdRewardType.SECOND_CHANCE)
@@ -629,14 +630,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         )
         _showReviveDialog.value = "Risk modunda hata yaptın! Reklam izleyerek +5 saniye ile devam edebilirsin."
       } else {
-        _activeSession.value = session.copy(
-          isFinished = true,
-          isVictory = false,
-          questionsAnswered = session.questionsAnswered + 1,
-          mistakeCount = session.mistakeCount + 1,
-          feedbackText = "Risk Modunda Hata Yaptın: $reason"
-        )
-        onGameCompleted(isVictory = false, accuracy = 20)
+        finalizeGameFinish(reason = "Risk Modunda Hata Yaptın: $reason")
       }
     } else {
       // Normal mod: Saniye azaltma yok! Direkt yanlış olarak işaretle ve devam et
@@ -718,30 +712,35 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     val session = _activeSession.value ?: return
     timerJob?.cancel()
     val isWin = session.currentScore > 0 || session.questionsAnswered > 0
-    _activeSession.value = session.copy(
-      remainingSeconds = 0f,
-      isFinished = true,
-      isVictory = isWin,
-      accuracyPercent = if (isWin) 70 else 20,
-      feedbackText = if (isWin) "${session.correctCount} doğru, ${session.mistakeCount} yanlış!" else reason
-    )
-    onGameCompleted(isVictory = isWin, accuracy = if (isWin) 70 else 20)
+    onGameCompleted(isVictory = isWin, accuracy = if (isWin) 70 else 20, reason = reason)
   }
 
-  private fun onGameCompleted(isVictory: Boolean, accuracy: Int) {
+  private fun onGameCompleted(isVictory: Boolean, accuracy: Int, reason: String = "") {
     val session = _activeSession.value ?: return
     val totalTime = session.durationSeconds - session.remainingSeconds
-
     val totalCorrect = session.correctCount
     val totalMistakes = session.mistakeCount
     val computedAccuracy = if (totalCorrect + totalMistakes > 0) {
       ((totalCorrect.toFloat() / (totalCorrect + totalMistakes)) * 100).toInt()
     } else accuracy
 
+    val recordedScore = if (isVictory) session.currentScore else 30
+    val recordedXp = if (isVictory) session.xpGained else 15
+
+    _activeSession.value = session.copy(
+      remainingSeconds = 0f,
+      isFinished = true,
+      isVictory = isVictory,
+      currentScore = recordedScore,
+      xpGained = recordedXp,
+      accuracyPercent = computedAccuracy,
+      feedbackText = if (isVictory) "${session.correctCount} doğru, ${session.mistakeCount} yanlış!" else reason.ifBlank { "Oyun bitti!" }
+    )
+
     repository.recordGameResult(
       gameType = session.gameType,
-      score = if (isVictory) session.currentScore else 30,
-      xpEarned = if (isVictory) session.xpGained else 15,
+      score = recordedScore,
+      xpEarned = recordedXp,
       accuracyPercent = computedAccuracy,
       durationSeconds = max(1, totalTime.toInt()),
       isRiskMode = session.isRiskMode,

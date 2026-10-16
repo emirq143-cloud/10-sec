@@ -80,15 +80,20 @@ object AdManager {
     }
   }
 
+  private var rewardedRetryCount = 0
+  private var rewardedInterstitialRetryCount = 0
+
   fun preloadAds(context: Context) {
-    loadRewardedAd(context)
-    loadRewardedInterstitialAd(context)
+    val appContext = context.applicationContext
+    loadRewardedAd(appContext)
+    loadRewardedInterstitialAd(appContext)
   }
 
   /**
    * Load Rewarded Ad (Ek süre / Ödüllü Reklam)
    */
   fun loadRewardedAd(context: Context, useTestUnit: Boolean = false) {
+    val appContext = context.applicationContext
     runOnMainThread {
       if (rewardedAd != null || isRewardedLoading) return@runOnMainThread
       isRewardedLoading = true
@@ -98,13 +103,14 @@ object AdManager {
       try {
         val adRequest = AdRequest.Builder().build()
         RewardedAd.load(
-          context,
+          appContext,
           adUnitId,
           adRequest,
           object : RewardedAdLoadCallback() {
             override fun onAdLoaded(ad: RewardedAd) {
               rewardedAd = ad
               isRewardedLoading = false
+              rewardedRetryCount = 0
               Log.d(TAG, "Rewarded ad successfully loaded ($adUnitId)")
             }
 
@@ -116,14 +122,18 @@ object AdManager {
               // If live ad has No Fill (code 3) during testing/debug, fallback to official Google test unit
               if (!useTestUnit && BuildConfig.DEBUG && error.code == 3) {
                 Log.d(TAG, "Live unit has No Fill in debug, trying Google official test unit...")
-                loadRewardedAd(context, useTestUnit = true)
+                loadRewardedAd(appContext, useTestUnit = true)
                 return
               }
 
-              // Retry loading after 15 seconds so an ad is ready for next attempt
-              mainHandler.postDelayed({
-                loadRewardedAd(context)
-              }, 15000)
+              // Exponential backoff: 15s, 30s, 60s (max 3 retries to prevent endless battery drain)
+              if (rewardedRetryCount < 3) {
+                val delayMs = 15000L * (1 shl rewardedRetryCount)
+                rewardedRetryCount++
+                mainHandler.postDelayed({
+                  loadRewardedAd(appContext)
+                }, delayMs)
+              }
             }
           }
         )
@@ -139,6 +149,7 @@ object AdManager {
    * Load Rewarded Interstitial Ad (Ödüllü Geçiş Reklamı)
    */
   fun loadRewardedInterstitialAd(context: Context, useTestUnit: Boolean = false) {
+    val appContext = context.applicationContext
     runOnMainThread {
       if (rewardedInterstitialAd != null || isRewardedInterstitialLoading) return@runOnMainThread
       isRewardedInterstitialLoading = true
@@ -148,13 +159,14 @@ object AdManager {
       try {
         val adRequest = AdRequest.Builder().build()
         RewardedInterstitialAd.load(
-          context,
+          appContext,
           adUnitId,
           adRequest,
           object : RewardedInterstitialAdLoadCallback() {
             override fun onAdLoaded(ad: RewardedInterstitialAd) {
               rewardedInterstitialAd = ad
               isRewardedInterstitialLoading = false
+              rewardedInterstitialRetryCount = 0
               Log.d(TAG, "Rewarded Interstitial ad loaded ($adUnitId)")
             }
 
@@ -166,14 +178,18 @@ object AdManager {
               // If live ad has No Fill in debug, fallback to official Google test unit
               if (!useTestUnit && BuildConfig.DEBUG && error.code == 3) {
                 Log.d(TAG, "Live Rewarded Interstitial has No Fill in debug, trying test unit...")
-                loadRewardedInterstitialAd(context, useTestUnit = true)
+                loadRewardedInterstitialAd(appContext, useTestUnit = true)
                 return
               }
 
-              // Retry after 15 seconds
-              mainHandler.postDelayed({
-                loadRewardedInterstitialAd(context)
-              }, 15000)
+              // Exponential backoff: 15s, 30s, 60s (max 3 retries)
+              if (rewardedInterstitialRetryCount < 3) {
+                val delayMs = 15000L * (1 shl rewardedInterstitialRetryCount)
+                rewardedInterstitialRetryCount++
+                mainHandler.postDelayed({
+                  loadRewardedInterstitialAd(appContext)
+                }, delayMs)
+              }
             }
           }
         )
@@ -270,9 +286,11 @@ object AdManager {
       }
     }
 
-    // 3. Ad is not ready yet -> start preloading immediately and inform caller
-    loadRewardedAd(activity)
-    loadRewardedInterstitialAd(activity)
+    // 3. Ad is not ready yet -> reset retry counters, start preloading immediately and inform caller
+    rewardedRetryCount = 0
+    rewardedInterstitialRetryCount = 0
+    loadRewardedAd(activity.applicationContext)
+    loadRewardedInterstitialAd(activity.applicationContext)
     onAdNotReady()
   }
 
