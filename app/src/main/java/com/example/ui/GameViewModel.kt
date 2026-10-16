@@ -236,7 +236,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
   }
 
   fun handleGameTransition(activity: Activity?, onProceed: () -> Unit) {
-    if (_isAdFree.value || gamesPlayedCount <= 0 || gamesPlayedCount % 4 != 0) {
+    if (_isAdFree.value || gamesPlayedCount <= 0 || gamesPlayedCount % 2 != 0) {
       onProceed()
       return
     }
@@ -466,7 +466,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
 
     // Tab 0: TÜRKİYE
     if (tabIndex == 0) {
-      if (currentFbUser != null && cloudEntries.isNotEmpty()) {
+      if (currentFbUser != null) {
         val sorted = cloudEntries.sortedByDescending { it.brainScore }
         var foundUser = false
         val mapped = sorted.mapIndexed { index, entry ->
@@ -506,11 +506,11 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         val reSorted = mapped.sortedByDescending { it.score }
         return reSorted.mapIndexed { index, item -> item.copy(rank = index + 1) }
       }
-      // Offline / default pool for Turkey (tab 1 in repository)
+      // Offline / default pool for Turkey only when user has not signed in with Google
       return repository.getLeaderboard(1)
     }
 
-    // Tab 1: DÜNYA (Global pool - tab 0 in repository)
+    // Tab 1: DÜNYA (Global pool)
     return repository.getLeaderboard(0)
   }
 

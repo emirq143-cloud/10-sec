@@ -52,33 +52,44 @@ fun NativeAdCard(
 
   DisposableEffect(adUnitId) {
     var currentAd: NativeAd? = null
-    try {
-      val adLoader = AdLoader.Builder(context, adUnitId)
-        .forNativeAd { ad: NativeAd ->
-          currentAd = ad
-          loadedNativeAd = ad
-          adFailedToLoad = false
-          Log.d("NativeAdCard", "Native ad loaded successfully: ${ad.headline}")
-        }
-        .withAdListener(object : AdListener() {
-          override fun onAdFailedToLoad(error: LoadAdError) {
-            super.onAdFailedToLoad(error)
-            Log.w("NativeAdCard", "Native ad failed to load: ${error.message} (code: ${error.code})")
-            adFailedToLoad = true
-          }
-        })
-        .withNativeAdOptions(
-          NativeAdOptions.Builder()
-            .setAdChoicesPlacement(NativeAdOptions.ADCHOICES_TOP_RIGHT)
-            .build()
-        )
-        .build()
+    val testAdUnitId = "ca-app-pub-3940256099942544/2247696110"
 
-      adLoader.loadAd(AdRequest.Builder().build())
-    } catch (e: Throwable) {
-      Log.w("NativeAdCard", "Exception requesting Native Ad: ${e.message}")
-      adFailedToLoad = true
+    fun loadAdInternal(targetUnitId: String, isRetry: Boolean = false) {
+      try {
+        val adLoader = AdLoader.Builder(context, targetUnitId)
+          .forNativeAd { ad: NativeAd ->
+            currentAd = ad
+            loadedNativeAd = ad
+            adFailedToLoad = false
+            Log.d("NativeAdCard", "Native ad loaded successfully: ${ad.headline}")
+          }
+          .withAdListener(object : AdListener() {
+            override fun onAdFailedToLoad(error: LoadAdError) {
+              super.onAdFailedToLoad(error)
+              Log.w("NativeAdCard", "Native ad failed to load ($targetUnitId): ${error.message} (code: ${error.code})")
+              if (!isRetry && com.example.BuildConfig.DEBUG) {
+                // Fallback to official Google Native Test Ad so it is always visible during testing
+                loadAdInternal(testAdUnitId, isRetry = true)
+              } else {
+                adFailedToLoad = true
+              }
+            }
+          })
+          .withNativeAdOptions(
+            NativeAdOptions.Builder()
+              .setAdChoicesPlacement(NativeAdOptions.ADCHOICES_TOP_RIGHT)
+              .build()
+          )
+          .build()
+
+        adLoader.loadAd(AdRequest.Builder().build())
+      } catch (e: Throwable) {
+        Log.w("NativeAdCard", "Exception requesting Native Ad: ${e.message}")
+        adFailedToLoad = true
+      }
     }
+
+    loadAdInternal(adUnitId)
 
     onDispose {
       currentAd?.destroy()
