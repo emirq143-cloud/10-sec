@@ -229,7 +229,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
           _syncStatusMessage.value = msg
           android.widget.Toast.makeText(activity, msg, android.widget.Toast.LENGTH_SHORT).show()
           AdManager.loadRewardedAd(activity)
-          AdManager.loadRewardedInterstitialAd(activity)
+          AdManager.loadInterstitialAd(activity)
         }
       )
     } else {
@@ -276,9 +276,11 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
   }
 
   fun skipReviveAndEndGame() {
+    val session = _activeSession.value ?: return
     val reason = _showReviveDialog.value ?: "Süre doldu!"
     _showReviveDialog.value = null
-    finalizeGameFinish(reason = reason, forceVictory = false)
+    val timedOut = session.remainingSeconds <= 0f && !session.isRiskMode
+    finalizeGameFinish(reason = reason, forceVictory = if (timedOut) null else false)
   }
 
   fun onAdRewardGranted(type: AdRewardType) {
@@ -717,7 +719,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
   fun finalizeGameFinish(reason: String = "Süre doldu!", forceVictory: Boolean? = null) {
     val session = _activeSession.value ?: return
     timerJob?.cancel()
-    val isWin = forceVictory ?: (session.currentScore > 0 && session.mistakeCount == 0)
+    val isWin = forceVictory ?: (session.currentScore > 0 || session.questionsAnswered > 0)
     onGameCompleted(isVictory = isWin, accuracy = if (isWin) 70 else 20, reason = reason)
   }
 
