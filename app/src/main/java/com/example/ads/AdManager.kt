@@ -14,23 +14,23 @@ import com.google.android.gms.ads.MobileAds
 import com.google.android.gms.ads.RequestConfiguration
 import com.google.android.gms.ads.interstitial.InterstitialAd
 import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback
-import com.google.android.gms.ads.rewarded.RewardedAd
-import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback
+import com.google.android.gms.ads.rewardedinterstitial.RewardedInterstitialAd
+import com.google.android.gms.ads.rewardedinterstitial.RewardedInterstitialAdLoadCallback
 
 object AdManager {
   private const val TAG = "AdManager"
 
-  // User's Real Google AdMob Ad Unit IDs
-  const val REWARDED_AD_UNIT_ID = "ca-app-pub-4020568333948380/7841422376" // Ek süre (Rewarded)
-  const val INTERSTITIAL_AD_UNIT_ID = "ca-app-pub-4020568333948380/1209846673" // Oyun Sonu Geçiş (Standard Interstitial)
-  const val NATIVE_AD_UNIT_ID = "ca-app-pub-4020568333948380/1635848931" // Yerel gelişmiş reklam
+  // User's Real Google AdMob Ad Unit IDs (Exact Match from AdMob Console)
+  const val REWARDED_INTERSTITIAL_AD_UNIT_ID = "ca-app-pub-4020568333948380/7841422376" // Ek Süre Ödüllü (Ödüllü Geçiş)
+  const val INTERSTITIAL_AD_UNIT_ID = "ca-app-pub-4020568333948380/1209846673" // Oyun Sonu Geçiş (Standart Geçiş)
+  const val NATIVE_AD_UNIT_ID = "ca-app-pub-4020568333948380/1635848931" // Yerel - Ana Sayfa (Yerel Gelişmiş)
 
-  // Official Google AdMob Test Unit IDs (used as test fallback if live unit has No Fill during testing)
-  private const val TEST_REWARDED_AD_UNIT_ID = "ca-app-pub-3940256099942544/5224354917"
+  // Official Google AdMob Test Unit IDs (used as fallback in debug/emulator)
+  private const val TEST_REWARDED_INTERSTITIAL_AD_UNIT_ID = "ca-app-pub-3940256099942544/5354046379"
   private const val TEST_INTERSTITIAL_AD_UNIT_ID = "ca-app-pub-3940256099942544/1033173712"
 
   private var isInitialized = false
-  private var rewardedAd: RewardedAd? = null
+  private var rewardedInterstitialAd: RewardedInterstitialAd? = null
   private var interstitialAd: InterstitialAd? = null
 
   private var isRewardedLoading = false
@@ -91,36 +91,36 @@ object AdManager {
   }
 
   /**
-   * Load Rewarded Ad (Ek süre / Ödüllü Reklam)
+   * Load Rewarded Interstitial Ad (Ek Süre Ödüllü - 7841422376)
    */
   fun loadRewardedAd(context: Context, useTestUnit: Boolean = false) {
     val appContext = context.applicationContext
     runOnMainThread {
-      if (rewardedAd != null || isRewardedLoading) return@runOnMainThread
+      if (rewardedInterstitialAd != null || isRewardedLoading) return@runOnMainThread
       isRewardedLoading = true
 
-      val adUnitId = if (useTestUnit) TEST_REWARDED_AD_UNIT_ID else REWARDED_AD_UNIT_ID
+      val adUnitId = if (useTestUnit) TEST_REWARDED_INTERSTITIAL_AD_UNIT_ID else REWARDED_INTERSTITIAL_AD_UNIT_ID
 
       try {
         val adRequest = AdRequest.Builder().build()
-        RewardedAd.load(
+        RewardedInterstitialAd.load(
           appContext,
           adUnitId,
           adRequest,
-          object : RewardedAdLoadCallback() {
-            override fun onAdLoaded(ad: RewardedAd) {
-              rewardedAd = ad
+          object : RewardedInterstitialAdLoadCallback() {
+            override fun onAdLoaded(ad: RewardedInterstitialAd) {
+              rewardedInterstitialAd = ad
               isRewardedLoading = false
               rewardedRetryCount = 0
-              Log.d(TAG, "Rewarded ad successfully loaded ($adUnitId)")
+              Log.d(TAG, "Rewarded Interstitial ad successfully loaded ($adUnitId)")
             }
 
             override fun onAdFailedToLoad(error: LoadAdError) {
-              rewardedAd = null
+              rewardedInterstitialAd = null
               isRewardedLoading = false
-              Log.w(TAG, "Rewarded ad failed to load: ${error.message} (code: ${error.code}) for unit: $adUnitId")
+              Log.w(TAG, "Rewarded Interstitial ad failed to load: ${error.message} (code: ${error.code}) for unit: $adUnitId")
 
-              // If live ad has No Fill (code 3) during testing/debug, fallback to official Google test unit
+              // If live ad has error in debug, fallback to official Google test unit
               if (!useTestUnit && BuildConfig.DEBUG && error.code == 3) {
                 Log.d(TAG, "Live unit has No Fill in debug, trying Google official test unit...")
                 loadRewardedAd(appContext, useTestUnit = true)
@@ -139,7 +139,7 @@ object AdManager {
           }
         )
       } catch (e: Throwable) {
-        rewardedAd = null
+        rewardedInterstitialAd = null
         isRewardedLoading = false
         Log.w(TAG, "loadRewardedAd exception: ${e.message}")
       }
@@ -147,7 +147,7 @@ object AdManager {
   }
 
   /**
-   * Load Standard Interstitial Ad (Oyun Sonu Geçiş Reklamı)
+   * Load Standard Interstitial Ad (Oyun Sonu Geçiş - 1209846673)
    */
   fun loadInterstitialAd(context: Context, useTestUnit: Boolean = false) {
     val appContext = context.applicationContext
@@ -204,6 +204,7 @@ object AdManager {
 
   /**
    * Show Rewarded Ad (Ek süre / İkinci Şans / Çarkıfelek)
+   * Uses user's real "Ek Sure Odullu" (Rewarded Interstitial) format!
    */
   fun showRewardedAd(
     activity: Activity?,
@@ -216,13 +217,13 @@ object AdManager {
       return
     }
 
-    val ad = rewardedAd
+    val ad = rewardedInterstitialAd
     if (ad != null) {
       try {
         var earnedReward = false
         ad.fullScreenContentCallback = object : FullScreenContentCallback() {
           override fun onAdDismissedFullScreenContent() {
-            rewardedAd = null
+            rewardedInterstitialAd = null
             loadRewardedAd(activity.applicationContext)
             if (earnedReward) {
               onAdClosed()
@@ -230,8 +231,8 @@ object AdManager {
           }
 
           override fun onAdFailedToShowFullScreenContent(adError: AdError) {
-            Log.w(TAG, "Rewarded ad failed to show: ${adError.message}")
-            rewardedAd = null
+            Log.w(TAG, "Rewarded Interstitial ad failed to show: ${adError.message}")
+            rewardedInterstitialAd = null
             loadRewardedAd(activity.applicationContext)
             onAdNotReady()
           }
@@ -245,7 +246,7 @@ object AdManager {
         return
       } catch (e: Throwable) {
         Log.w(TAG, "showRewardedAd exception: ${e.message}")
-        rewardedAd = null
+        rewardedInterstitialAd = null
         loadRewardedAd(activity.applicationContext)
       }
     }
@@ -297,6 +298,6 @@ object AdManager {
     onCompleted()
   }
 
-  fun isRewardedAdReady(): Boolean = rewardedAd != null
+  fun isRewardedAdReady(): Boolean = rewardedInterstitialAd != null
   fun isTransitionAdReady(): Boolean = interstitialAd != null
 }

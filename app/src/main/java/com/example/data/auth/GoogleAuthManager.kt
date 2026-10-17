@@ -36,9 +36,9 @@ class GoogleAuthManager(private val initialContext: Context? = null) {
           Log.w("GoogleAuthManager", "Default initializeApp failed, fallback with options: ${e.message}")
           try {
             val options = FirebaseOptions.Builder()
-              .setApplicationId("1:703490968047:android:a1c0d16ff63d76e33d0628")
-              .setProjectId("tensecchallenge-nvqkz")
-              .setApiKey("dummy-auth-key")
+              .setApplicationId("1:703490968047:android:0db30a4478e4b8c3a60e1a")
+              .setProjectId("gen-lang-client-0314333356")
+              .setApiKey("AIzaSyCbJVRprynqvD_eb52BR2-UH8H5lb2M4MU")
               .build()
             FirebaseApp.initializeApp(appContext, options)
           } catch (e2: Exception) {
