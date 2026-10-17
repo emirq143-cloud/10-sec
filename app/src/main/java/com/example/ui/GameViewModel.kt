@@ -278,7 +278,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
   fun skipReviveAndEndGame() {
     val reason = _showReviveDialog.value ?: "Süre doldu!"
     _showReviveDialog.value = null
-    finalizeGameFinish(reason = reason)
+    finalizeGameFinish(reason = reason, forceVictory = false)
   }
 
   fun onAdRewardGranted(type: AdRewardType) {
@@ -630,7 +630,13 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         )
         _showReviveDialog.value = "Risk modunda hata yaptın! Reklam izleyerek +5 saniye ile devam edebilirsin."
       } else {
-        finalizeGameFinish(reason = "Risk Modunda Hata Yaptın: $reason")
+        _activeSession.value = session.copy(
+          questionsAnswered = session.questionsAnswered + 1,
+          mistakeCount = session.mistakeCount + 1,
+          comboStreak = 0,
+          feedbackText = "Risk Modunda Hata Yaptın: $reason"
+        )
+        finalizeGameFinish(reason = "Risk Modunda Hata Yaptın: $reason", forceVictory = false)
       }
     } else {
       // Normal mod: Saniye azaltma yok! Direkt yanlış olarak işaretle ve devam et
@@ -704,14 +710,14 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
       )
       _showReviveDialog.value = "$reason Reklam izleyerek +5 saniye ile devam edebilirsin."
     } else {
-      finalizeGameFinish(reason = reason)
+      finalizeGameFinish(reason = reason, forceVictory = false)
     }
   }
 
-  fun finalizeGameFinish(reason: String = "Süre doldu!") {
+  fun finalizeGameFinish(reason: String = "Süre doldu!", forceVictory: Boolean? = null) {
     val session = _activeSession.value ?: return
     timerJob?.cancel()
-    val isWin = session.currentScore > 0 || session.questionsAnswered > 0
+    val isWin = forceVictory ?: (session.currentScore > 0 && session.mistakeCount == 0)
     onGameCompleted(isVictory = isWin, accuracy = if (isWin) 70 else 20, reason = reason)
   }
 
