@@ -73,6 +73,7 @@ fun SymbolMemoryGame(
   streak: Int,
   isRiskMode: Boolean,
   onBack: () -> Unit,
+  hasUsedRevive: Boolean = false,
   onSetTimerPaused: (Boolean) -> Unit = {},
   onRoundSuccess: (scoreBonus: Int, timeBonus: Float) -> Unit = { _, _ -> },
   onRoundMistake: (timePenalty: Float, reason: String) -> Unit = { _, _ -> },
@@ -93,7 +94,8 @@ fun SymbolMemoryGame(
     onDispose { onSetTimerPaused(false) }
   }
 
-  LaunchedEffect(round) {
+  // Memorization Phase Coroutine - re-triggers on new round OR when player revives!
+  LaunchedEffect(round, hasUsedRevive) {
     roundData = generateSymbolRound(if (round <= 2) 6 else 9)
     currentDisplay.clear()
     currentDisplay.addAll(roundData.initialSymbols)

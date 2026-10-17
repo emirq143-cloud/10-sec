@@ -121,8 +121,8 @@ class LeaderboardRepository(
         "userName" to userName.trim().ifBlank { "Oyuncu" }.take(30),
         "avatarId" to avatarId.ifBlank { "default" }.take(30),
         "avatarEmoji" to avatarEmoji.ifBlank { "🧑‍🚀" }.take(10),
-        "brainScore" to brainScore.coerceIn(0, 1000000),
-        "level" to level.coerceIn(1, 500),
+        "brainScore" to brainScore.coerceIn(0, 2000000),
+        "level" to level.coerceIn(1, 1000),
         "city" to city.trim().ifBlank { "İstanbul" }.take(30),
         "updatedAt" to FieldValue.serverTimestamp()
       )

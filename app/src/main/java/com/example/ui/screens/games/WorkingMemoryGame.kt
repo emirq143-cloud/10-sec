@@ -71,6 +71,7 @@ fun WorkingMemoryGame(
   streak: Int,
   isRiskMode: Boolean,
   onBack: () -> Unit,
+  hasUsedRevive: Boolean = false,
   onSetTimerPaused: (Boolean) -> Unit = {},
   onRoundSuccess: (scoreBonus: Int, timeBonus: Float) -> Unit = { _, _ -> },
   onRoundMistake: (timePenalty: Float, reason: String) -> Unit = { _, _ -> },
@@ -92,8 +93,8 @@ fun WorkingMemoryGame(
     }
   }
 
-  // Display Phase Coroutine
-  LaunchedEffect(round) {
+  // Display Phase Coroutine - re-triggers on new round OR when player revives after watching ad!
+  LaunchedEffect(round, hasUsedRevive) {
     enteredDigits.clear()
     isDisplayPhase = true
     onSetTimerPaused(true) // DO NOT penalize game clock during memorization!

@@ -308,8 +308,8 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             isFinished = false,
             isTimerPaused = true, // Paused while ad is on screen; starts in resumeGameAfterRevive
             hasUsedRevive = true,
-            remainingSeconds = 5f,
-            feedbackText = "🔥 Can Yenilendi! +5 Saniye Süre!"
+            remainingSeconds = 6.5f,
+            feedbackText = "🔥 Can Yenilendi! +6 Saniye Süre!"
           )
           _screenState.value = ScreenState.GAME_PLAY
         }

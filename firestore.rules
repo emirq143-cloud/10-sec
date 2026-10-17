@@ -20,18 +20,15 @@ service cloud.firestore {
         data.userName is string && data.userName.size() >= 1 && data.userName.size() <= 30 &&
         data.avatarId is string && data.avatarId.size() >= 1 && data.avatarId.size() <= 30 &&
         data.avatarEmoji is string && data.avatarEmoji.size() >= 1 && data.avatarEmoji.size() <= 10 &&
-        data.brainScore is int && data.brainScore >= 0 && data.brainScore <= 1000000 &&
-        data.level is int && data.level >= 1 && data.level <= 500 &&
+        data.brainScore is int && data.brainScore >= 0 && data.brainScore <= 2000000 &&
+        data.level is int && data.level >= 1 && data.level <= 1000 &&
         data.city is string && data.city.size() >= 1 && data.city.size() <= 30 &&
         data.updatedAt is timestamp && data.updatedAt <= request.time;
     }
 
     match /leaderboard/{userId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn() && request.auth.uid == userId && isValidLeaderboardEntry(incoming()) && incoming().brainScore <= 25000;
-      allow update: if isSignedIn() && request.auth.uid == userId && isValidLeaderboardEntry(incoming()) &&
-        incoming().brainScore >= resource.data.brainScore &&
-        incoming().brainScore <= resource.data.brainScore + 15000;
+      allow read: if true;
+      allow create, update: if isSignedIn() && request.auth.uid == userId && isValidLeaderboardEntry(incoming());
       allow delete: if isSignedIn() && request.auth.uid == userId;
     }
   }
