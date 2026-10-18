@@ -65,14 +65,42 @@ class GameRepository(context: Context) {
   )
 
   private val competitorsGlobal = listOf(
-    Competitor("g1", "Alex_V", 19450, "👑", "US", League.MASTER),
-    Competitor("g2", "Kenji", 18210, "🥷", "JP", League.MASTER),
-    Competitor("g3", "Elena_R", 17640, "💎", "DE", League.MASTER),
-    Competitor("g4", "BerkAy", 15842, "⚡", "TR", League.DIAMOND),
-    Competitor("g5", "Lucas", 15120, "🚀", "BR", League.DIAMOND),
-    Competitor("g6", "Zehra", 14920, "🔥", "TR", League.DIAMOND),
-    Competitor("g7", "Matteo", 14100, "🇮🇹", "IT", League.DIAMOND),
-    Competitor("g8", "Sophie", 13450, "🇫🇷", "FR", League.DIAMOND)
+    Competitor("g1", "Liam_US", 24850, "👑", "US", League.MASTER, "New York"),
+    Competitor("g2", "Kenji_JP", 23910, "🥷", "JP", League.MASTER, "Tokyo"),
+    Competitor("g3", "Elena_DE", 22840, "💎", "DE", League.MASTER, "Berlin"),
+    Competitor("g4", "Min-jun", 21950, "⚡", "KR", League.MASTER, "Seoul"),
+    Competitor("g5", "Arthur_UK", 21200, "🦁", "GB", League.MASTER, "London"),
+    Competitor("g6", "Camille", 20450, "🌸", "FR", League.MASTER, "Paris"),
+    Competitor("g7", "Mateo_ES", 19800, "🔥", "ES", League.DIAMOND, "Madrid"),
+    Competitor("g8", "Lucas_BR", 19120, "🚀", "BR", League.DIAMOND, "São Paulo"),
+    Competitor("g9", "Oliver_CA", 18650, "🦉", "CA", League.DIAMOND, "Toronto"),
+    Competitor("g10", "Matteo_IT", 18100, "🏎️", "IT", League.DIAMOND, "Roma"),
+    Competitor("g11", "Astrid_SE", 17550, "🌟", "SE", League.DIAMOND, "Stockholm"),
+    Competitor("g12", "Noah_AU", 16900, "🐨", "AU", League.DIAMOND, "Sydney"),
+    Competitor("g13", "BerkAy", 15842, "⚡", "TR", League.DIAMOND, "İstanbul"),
+    Competitor("g14", "Lars_NL", 15400, "🐬", "NL", League.DIAMOND, "Amsterdam"),
+    Competitor("g15", "Zehra", 14920, "🔥", "TR", League.DIAMOND, "Ankara"),
+    Competitor("g16", "Sora_JP", 14450, "🦊", "JP", League.DIAMOND, "Osaka"),
+    Competitor("g17", "Hannah_CH", 13900, "🦄", "CH", League.DIAMOND, "Zürich"),
+    Competitor("g18", "Yusuf", 13765, "🦁", "TR", League.DIAMOND, "İzmir"),
+    Competitor("g19", "Finn_NO", 13200, "🐧", "NO", League.DIAMOND, "Oslo"),
+    Competitor("g20", "Aiko_JP", 12650, "🐼", "JP", League.DIAMOND, "Kyoto"),
+    Competitor("g21", "Can_07", 12400, "🏎️", "TR", League.DIAMOND, "Antalya"),
+    Competitor("g22", "Elif_K", 11850, "🎯", "TR", League.GOLD, "Bursa"),
+    Competitor("g23", "Chloe_FR", 11400, "🍓", "FR", League.GOLD, "Lyon"),
+    Competitor("g24", "Baris", 10920, "🐺", "TR", League.GOLD, "Eskişehir"),
+    Competitor("g25", "Elias_FI", 10450, "🐻", "FI", League.GOLD, "Helsinki"),
+    Competitor("g26", "Sofia_IT", 9950, "🦋", "IT", League.GOLD, "Milano"),
+    Competitor("g27", "Mert", 9400, "🧑‍💻", "TR", League.GOLD, "Adana"),
+    Competitor("g28", "Ji-woo", 8950, "🐰", "KR", League.GOLD, "Busan"),
+    Competitor("g29", "Ada", 8660, "🦊", "TR", League.GOLD, "Trabzon"),
+    Competitor("g30", "Deniz", 8540, "🌊", "TR", League.GOLD, "Muğla"),
+    Competitor("g31", "Kaan", 8310, "🦅", "TR", League.GOLD, "Konya"),
+    Competitor("g32", "Emma_US", 7900, "🧁", "US", League.GOLD, "Los Angeles"),
+    Competitor("g33", "Burak", 7600, "🎮", "TR", League.GOLD, "Kayseri"),
+    Competitor("g34", "Selin", 6850, "🌸", "TR", League.SILVER, "Gaziantep"),
+    Competitor("g35", "Milo_UK", 6400, "🐶", "GB", League.SILVER, "Manchester"),
+    Competitor("g36", "Emre_TR", 5900, "🚀", "TR", League.SILVER, "Samsun")
   )
 
   private val competitorsFriends = listOf(
@@ -84,21 +112,48 @@ class GameRepository(context: Context) {
   )
 
   private val allCatalogAvatars = listOf(
+    // Common tier (Free & accessible cute starters)
     AvatarItem("default", "Astronot", "🧑‍🚀", unlockLevel = 1, priceCoins = 0, isUnlocked = true, description = "İlk cesur maceracı (Ücretsiz)", rarity = AvatarRarity.COMMON),
+    AvatarItem("cute_panda", "Tatlı Panda", "🐼", unlockLevel = 1, priceCoins = 200, isUnlocked = false, description = "Bambu aşığı pofuduk zeka dehası", rarity = AvatarRarity.COMMON),
+    AvatarItem("cotton_bunny", "Pamuk Tavşan", "🐰", unlockLevel = 1, priceCoins = 250, isUnlocked = false, description = "Hızlı kulaklar ve sevimli refleksler", rarity = AvatarRarity.COMMON),
+    AvatarItem("honey_bear", "Bal Ayıcığı", "🐻", unlockLevel = 1, priceCoins = 300, isUnlocked = false, description = "Sevimli mi sevimli tatlı hafıza şampiyonu", rarity = AvatarRarity.COMMON),
+    AvatarItem("sleepy_koala", "Sakin Koala", "🐨", unlockLevel = 1, priceCoins = 350, isUnlocked = false, description = "Huzurlu, telaşsız ve kusursuz odak", rarity = AvatarRarity.COMMON),
     AvatarItem("ninja", "Gölge Ninja", "🥷", unlockLevel = 1, priceCoins = 350, isUnlocked = false, description = "Sessiz ve yıldırım refleks ustası", rarity = AvatarRarity.COMMON),
-    AvatarItem("cat", "Uğurlu Kedi", "🐱", unlockLevel = 1, priceCoins = 500, isUnlocked = false, description = "Dokuz canlı refleks uzmanı", rarity = AvatarRarity.COMMON),
+    AvatarItem("cat", "Uğurlu Kedi", "🐱", unlockLevel = 1, priceCoins = 400, isUnlocked = false, description = "Dokuz canlı refleks uzmanı", rarity = AvatarRarity.COMMON),
+    AvatarItem("happy_puppy", "Neşeli Köpekçik", "🐶", unlockLevel = 1, priceCoins = 450, isUnlocked = false, description = "Sadık dost ve neşeli bulmaca avcısı", rarity = AvatarRarity.COMMON),
+    AvatarItem("tiny_hamster", "Fındık Kurdu", "🐹", unlockLevel = 1, priceCoins = 500, isUnlocked = false, description = "Yanakları ceviz dolu hızlı koşucu", rarity = AvatarRarity.COMMON),
     AvatarItem("robot", "Siber Robot", "🤖", unlockLevel = 1, priceCoins = 750, isUnlocked = false, description = "Hızlı işlemci ve hesaplama uzmanı", rarity = AvatarRarity.COMMON),
+
+    // Rare tier (Charming, aesthetic and clever)
+    AvatarItem("gentle_penguin", "Buz Pengueni", "🐧", unlockLevel = 1, priceCoins = 850, isUnlocked = false, description = "Buz üstünde kayan sevimli dahi", rarity = AvatarRarity.RARE),
+    AvatarItem("golden_chick", "Altın Civciv", "🐣", unlockLevel = 1, priceCoins = 950, isUnlocked = false, description = "Kabuğunu kırıp zirveye koşan tatlılık", rarity = AvatarRarity.RARE),
     AvatarItem("alien", "Uzaylı Gezgin", "👽", unlockLevel = 1, priceCoins = 1000, isUnlocked = false, description = "Bilinmeyen boyutların kaşifi", rarity = AvatarRarity.RARE),
+    AvatarItem("blossom_fairy", "Çiçek Perisi", "🌸", unlockLevel = 1, priceCoins = 1200, isUnlocked = false, description = "Bahar tazeliğinde berrak bir zihin", rarity = AvatarRarity.RARE),
     AvatarItem("detective", "Dedektif", "🕵️‍♂️", unlockLevel = 1, priceCoins = 1350, isUnlocked = false, description = "Farkları milisaniyede sezen göz", rarity = AvatarRarity.RARE),
+    AvatarItem("rainbow_butterfly", "Gökkuşağı Kelebeği", "🦋", unlockLevel = 1, priceCoins = 1500, isUnlocked = false, description = "Rengarenk kanatlarla yüksek sezgi", rarity = AvatarRarity.RARE),
+    AvatarItem("wise_sloth", "Chill Tembel", "🦥", unlockLevel = 1, priceCoins = 1750, isUnlocked = false, description = "Asla telaş yapmaz, tek hamlede bilir", rarity = AvatarRarity.RARE),
     AvatarItem("lion", "Kral Aslan", "🦁", unlockLevel = 1, priceCoins = 1800, isUnlocked = false, description = "Reflekslerin ve cesaretin kralı", rarity = AvatarRarity.RARE),
+    AvatarItem("playful_otter", "Su Samuru", "🦦", unlockLevel = 1, priceCoins = 2000, isUnlocked = false, description = "El ele yüzen meraklı problem çözücü", rarity = AvatarRarity.RARE),
     AvatarItem("fox", "Kurnaz Tilki", "🦊", unlockLevel = 1, priceCoins = 2200, isUnlocked = false, description = "Zeka ve taktik dehası", rarity = AvatarRarity.RARE),
+
+    // Epic tier (Magical, colorful and wise)
+    AvatarItem("smart_dolphin", "Okyanus Yunusu", "🐬", unlockLevel = 1, priceCoins = 2400, isUnlocked = false, description = "Derin denizlerin süper zekalı dostu", rarity = AvatarRarity.EPIC),
+    AvatarItem("night_owl", "Bilge Baykuş", "🦉", unlockLevel = 1, priceCoins = 2600, isUnlocked = false, description = "Gece gündüz ışıldayan keskin algı", rarity = AvatarRarity.EPIC),
     AvatarItem("wizard", "Zihin Büyücüsü", "🧙‍♂️", unlockLevel = 1, priceCoins = 2800, isUnlocked = false, description = "Derin mantık ve hafıza büyücüsü", rarity = AvatarRarity.EPIC),
+    AvatarItem("strawberry_sweet", "Çilek Şekeri", "🍓", unlockLevel = 1, priceCoins = 3000, isUnlocked = false, description = "Tatlı mı tatlı, enerji dolu hafıza", rarity = AvatarRarity.EPIC),
+    AvatarItem("cupcake_chef", "Kupkek Şefi", "🧁", unlockLevel = 1, priceCoins = 3300, isUnlocked = false, description = "Lezzetli zeka tariflerinin ustası", rarity = AvatarRarity.EPIC),
     AvatarItem("dragon", "Ateş Ejderi", "🐲", unlockLevel = 1, priceCoins = 3500, isUnlocked = false, description = "Alev saçan seri galibiyetler", rarity = AvatarRarity.EPIC),
+    AvatarItem("fluffy_hedgehog", "Pofuduk Kirpi", "🦔", unlockLevel = 1, priceCoins = 3800, isUnlocked = false, description = "Minik adımlarla büyük başarılar", rarity = AvatarRarity.EPIC),
     AvatarItem("samurai", "Neon Samuray", "⚔️", unlockLevel = 1, priceCoins = 4200, isUnlocked = false, description = "Kusursuz keskinlikte zihin", rarity = AvatarRarity.EPIC),
     AvatarItem("eagle", "Göklerin Kartalı", "🦅", unlockLevel = 1, priceCoins = 4900, isUnlocked = false, description = "Yükseklerden gören keskin bakış", rarity = AvatarRarity.EPIC),
+
+    // Legendary tier (Iconic, dazzling and supreme)
+    AvatarItem("ninja_kitty", "Shinobi Kedicik", "🐱‍👤", unlockLevel = 1, priceCoins = 5200, isUnlocked = false, description = "Gecenin gizemli tatlı ninja patisi", rarity = AvatarRarity.LEGENDARY),
     AvatarItem("crown_king", "Altın Kral", "👑", unlockLevel = 1, priceCoins = 5800, isUnlocked = false, description = "Tüm liglerin zirvesindeki efsane", rarity = AvatarRarity.LEGENDARY),
+    AvatarItem("aurora_star", "Kutup Yıldızı", "🌟", unlockLevel = 1, priceCoins = 6500, isUnlocked = false, description = "Göz kamaştıran zeka ışıltısı", rarity = AvatarRarity.LEGENDARY),
     AvatarItem("diamond_hero", "Elmas Şampiyon", "💎", unlockLevel = 1, priceCoins = 6800, isUnlocked = false, description = "Saf odaklanma ve konsantrasyon", rarity = AvatarRarity.LEGENDARY),
     AvatarItem("lightning", "Yıldırım Tanrısı", "⚡", unlockLevel = 1, priceCoins = 7900, isUnlocked = false, description = "Işık hızında tepki gücü", rarity = AvatarRarity.LEGENDARY),
+    AvatarItem("galaxy_fox", "Kozmik Tilki", "🦊", unlockLevel = 1, priceCoins = 8500, isUnlocked = false, description = "Yıldızların ötesinden gelen kurnaz deha", rarity = AvatarRarity.LEGENDARY),
     AvatarItem("unicorn", "Kozmik Unicorn", "🦄", unlockLevel = 1, priceCoins = 9200, isUnlocked = false, description = "Nadir bulunan olağanüstü sezgi", rarity = AvatarRarity.LEGENDARY),
     AvatarItem("agent", "Siber Ajan", "🕶️", unlockLevel = 1, priceCoins = 10500, isUnlocked = false, description = "Matriks düzeyinde algı", rarity = AvatarRarity.LEGENDARY),
     AvatarItem("gladiator", "Altın Gladyatör", "🏆", unlockLevel = 1, priceCoins = 12000, isUnlocked = false, description = "Asla pes etmeyen arenanın fatihi", rarity = AvatarRarity.LEGENDARY)
@@ -494,6 +549,8 @@ class GameRepository(context: Context) {
       persistUserData()
     }
   }
+
+  fun getGlobalCompetitors(): List<Competitor> = competitorsGlobal
 
   fun getLeaderboard(tabIndex: Int): List<LeaderboardEntry> {
     val user = _userProfile.value

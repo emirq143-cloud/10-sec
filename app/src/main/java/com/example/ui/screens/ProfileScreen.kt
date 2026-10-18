@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -89,6 +90,15 @@ fun ProfileScreen(
 
   val filteredAvatars = remember(avatarFilter, avatars) {
     when (avatarFilter) {
+      "Tatlılar 🐾" -> avatars.filter {
+        it.id in setOf(
+          "cute_panda", "cotton_bunny", "honey_bear", "sleepy_koala", "cat",
+          "happy_puppy", "tiny_hamster", "gentle_penguin", "golden_chick",
+          "blossom_fairy", "rainbow_butterfly", "wise_sloth", "playful_otter",
+          "smart_dolphin", "night_owl", "strawberry_sweet", "cupcake_chef",
+          "fluffy_hedgehog", "ninja_kitty", "unicorn", "fox", "galaxy_fox"
+        )
+      }
       "Açılanlar" -> avatars.filter { it.isUnlocked }
       "Kilitli" -> avatars.filter { !it.isUnlocked }
       else -> avatars
@@ -390,20 +400,19 @@ fun ProfileScreen(
             }
           }
 
-          // Filtre Sekmeleri: Tümü, Açılanlar, Kilitli (Genişliği eşit paylaşır, Kilitli asla alt alta yazılmaz)
-          Row(
+          // Filtre Sekmeleri: Tümü, Tatlılar 🐾, Açılanlar, Kilitli
+          LazyRow(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
           ) {
-            listOf("Tümü", "Açılanlar", "Kilitli").forEach { filter ->
+            items(listOf("Tümü", "Tatlılar 🐾", "Açılanlar", "Kilitli")) { filter ->
               val isSelected = avatarFilter == filter
               Box(
                 modifier = Modifier
-                  .weight(1f)
                   .clip(RoundedCornerShape(12.dp))
                   .background(if (isSelected) BluePrimary else Color(0xFFE2E8F0))
                   .clickable { avatarFilter = filter }
-                  .padding(vertical = 8.dp),
+                  .padding(horizontal = 14.dp, vertical = 8.dp),
                 contentAlignment = Alignment.Center
               ) {
                 Text(

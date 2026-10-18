@@ -31,7 +31,10 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.listSaver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -78,13 +81,27 @@ fun WorkingMemoryGame(
   onSuccess: (scoreBonus: Int, accuracy: Int) -> Unit = { _, _ -> },
   onFail: (reason: String) -> Unit = {}
 ) {
-  var round by remember { mutableIntStateOf(1) }
-  var sequence by remember { mutableStateOf(generateMemorySequence(1)) }
-  var isDisplayPhase by remember { mutableStateOf(true) }
-  var displayProgress by remember { mutableFloatStateOf(1f) }
-  val enteredDigits = remember { mutableStateListOf<Int>() }
-  var feedbackText by remember { mutableStateOf("") }
-  var feedbackIsSuccess by remember { mutableStateOf(true) }
+  var round by rememberSaveable { mutableIntStateOf(1) }
+
+  val sequenceListSaver = listSaver<List<Int>, Int>(
+    save = { it },
+    restore = { it.toList() }
+  )
+  var sequence by rememberSaveable(stateSaver = sequenceListSaver) {
+    mutableStateOf(generateMemorySequence(1))
+  }
+
+  var isDisplayPhase by rememberSaveable { mutableStateOf(true) }
+  var displayProgress by rememberSaveable { mutableFloatStateOf(1f) }
+
+  val enteredDigitsSaver = listSaver<SnapshotStateList<Int>, Int>(
+    save = { it.toList() },
+    restore = { mutableStateListOf<Int>().apply { addAll(it) } }
+  )
+  val enteredDigits = rememberSaveable(saver = enteredDigitsSaver) { mutableStateListOf<Int>() }
+  var feedbackText by rememberSaveable { mutableStateOf("") }
+  var feedbackIsSuccess by rememberSaveable { mutableStateOf(true) }
+  var isPeeking by remember { mutableStateOf(false) }
 
   // Clean up timer pause on unmount
   DisposableEffect(Unit) {
@@ -93,10 +110,11 @@ fun WorkingMemoryGame(
     }
   }
 
-  // Display Phase Coroutine - re-triggers on new round OR when player revives after watching ad!
-  LaunchedEffect(round, hasUsedRevive) {
+  // Display Phase Coroutine - triggers ONLY when a new round starts!
+  LaunchedEffect(round) {
     enteredDigits.clear()
     isDisplayPhase = true
+    displayProgress = 1f
     onSetTimerPaused(true) // DO NOT penalize game clock during memorization!
 
     val totalMs = if (sequence.size <= 3) 2400L else 3200L
@@ -113,6 +131,16 @@ fun WorkingMemoryGame(
     onSetTimerPaused(false) // Resume clock for input phase!
   }
 
+  // Brief Peek Coroutine - allows player to peek at numbers for 1.5s if forgotten (timer paused)
+  LaunchedEffect(isPeeking) {
+    if (isPeeking) {
+      onSetTimerPaused(true)
+      delay(1500L)
+      isPeeking = false
+      onSetTimerPaused(false)
+    }
+  }
+
   fun checkCompletion() {
     if (enteredDigits.size == sequence.size) {
       val isCorrect = enteredDigits.toList() == sequence
@@ -120,8 +148,9 @@ fun WorkingMemoryGame(
         feedbackText = "✓ HARİKA! (+150)"
         feedbackIsSuccess = true
         onRoundSuccess(150, 3.5f)
-        round++
-        sequence = generateMemorySequence(round)
+        val nextRound = round + 1
+        sequence = generateMemorySequence(nextRound)
+        round = nextRound
       } else {
         val expectedStr = sequence.joinToString(" - ")
         val enteredStr = enteredDigits.joinToString(" - ")
@@ -129,8 +158,9 @@ fun WorkingMemoryGame(
         feedbackIsSuccess = false
         onRoundMistake(2.0f, "Girdiğin: $enteredStr, Beklenen: $expectedStr")
         if (!isRiskMode) {
-          round++
-          sequence = generateMemorySequence(round)
+          val nextRound = round + 1
+          sequence = generateMemorySequence(nextRound)
+          round = nextRound
         }
       }
     }
@@ -211,25 +241,46 @@ fun WorkingMemoryGame(
           .clip(RoundedCornerShape(3.dp))
       )
     } else {
-      Box(
-        modifier = Modifier
-          .clip(RoundedCornerShape(14.dp))
-          .background(Color.Black.copy(alpha = 0.6f))
-          .border(1.5.dp, SkyBlueAccent, RoundedCornerShape(14.dp))
-          .padding(horizontal = 16.dp, vertical = 6.dp)
+      Row(
+        modifier = Modifier.padding(horizontal = 16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
       ) {
-        Text(
-          text = "👇 SAYILARI SIRAYLA TUŞLA 👇",
-          color = SkyBlueAccent,
-          fontSize = 13.sp,
-          fontWeight = FontWeight.Black
-        )
+        Box(
+          modifier = Modifier
+            .clip(RoundedCornerShape(14.dp))
+            .background(Color.Black.copy(alpha = 0.6f))
+            .border(1.5.dp, SkyBlueAccent, RoundedCornerShape(14.dp))
+            .padding(horizontal = 14.dp, vertical = 6.dp)
+        ) {
+          Text(
+            text = "👇 SAYILARI SIRAYLA TUŞLA 👇",
+            color = SkyBlueAccent,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Black
+          )
+        }
+
+        Box(
+          modifier = Modifier
+            .clip(RoundedCornerShape(14.dp))
+            .background(NeonGold.copy(alpha = 0.2f))
+            .border(1.5.dp, NeonGold, RoundedCornerShape(14.dp))
+            .clickable(enabled = !isPeeking) { isPeeking = true }
+            .padding(horizontal = 10.dp, vertical = 6.dp)
+        ) {
+          Text(
+            text = if (isPeeking) "👁️ 1.5s..." else "👁️ Hatırla",
+            color = NeonGold,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Bold
+          )
+        }
       }
     }
 
     Spacer(modifier = Modifier.height(14.dp))
 
-    // Sayı Gösterim / Slot Kutusu
     // Sayı Gösterim / Slot Kutusu (Tam ekran uyumlu, taşma veya kırpılma yapmaz)
     Box(
       modifier = Modifier
@@ -246,7 +297,7 @@ fun WorkingMemoryGame(
       val spacing = if (totalCount >= 5) 6.dp else 10.dp
       val numFontSize = if (totalCount >= 5) 20.sp else 24.sp
 
-      if (isDisplayPhase) {
+      if (isDisplayPhase || isPeeking) {
         // Hafızaya alınacak sayılar (Tüm rakamlar tam sığacak şekilde weight ile esnek hizalanır)
         Row(
           modifier = Modifier.fillMaxWidth(),
@@ -354,7 +405,7 @@ fun WorkingMemoryGame(
                 when {
                   isDelete -> Color(0xFFEF4444)
                   isClear -> Color(0xFF64748B)
-                  isDisplayPhase -> Color(0x66FFFFFF)
+                  isDisplayPhase || isPeeking -> Color(0x66FFFFFF)
                   else -> CardWhite
                 }
               )
@@ -363,7 +414,7 @@ fun WorkingMemoryGame(
                 color = if (isDelete || isClear) Color.White else SkyBlueAccent,
                 shape = RoundedCornerShape(16.dp)
               )
-              .clickable(enabled = !isDisplayPhase) {
+              .clickable(enabled = !isDisplayPhase && !isPeeking) {
                 when (item) {
                   "⌫" -> {
                     if (enteredDigits.isNotEmpty()) {

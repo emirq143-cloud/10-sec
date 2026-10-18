@@ -209,7 +209,7 @@ object AdManager {
   fun showRewardedAd(
     activity: Activity?,
     onRewardEarned: () -> Unit,
-    onAdClosed: () -> Unit = {},
+    onAdClosed: (earnedReward: Boolean) -> Unit = {},
     onAdNotReady: () -> Unit = {}
   ) {
     if (activity == null || activity.isFinishing) {
@@ -225,9 +225,7 @@ object AdManager {
           override fun onAdDismissedFullScreenContent() {
             rewardedInterstitialAd = null
             loadRewardedAd(activity.applicationContext)
-            if (earnedReward) {
-              onAdClosed()
-            }
+            onAdClosed(earnedReward)
           }
 
           override fun onAdFailedToShowFullScreenContent(adError: AdError) {

@@ -211,17 +211,42 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         val msg = "İnternet bağlantısı yok. Reklam izlemek için lütfen internetinizi kontrol edin."
         _syncStatusMessage.value = msg
         android.widget.Toast.makeText(activity, msg, android.widget.Toast.LENGTH_SHORT).show()
+        if (type == AdRewardType.SECOND_CHANCE) {
+          val session = _activeSession.value
+          if (session != null && !session.isFinished && session.remainingSeconds > 0f) {
+            _activeSession.value = session.copy(isTimerPaused = false)
+            startTimer()
+          }
+        }
         return
       }
 
       AdManager.showRewardedAd(
         activity = activity,
         onRewardEarned = { onAdRewardGranted(type) },
-        onAdClosed = {
-          when (type) {
-            AdRewardType.EXTRA_SPIN -> openLuckyWheel()
-            AdRewardType.SECOND_CHANCE -> resumeGameAfterRevive()
-            else -> {}
+        onAdClosed = { earned ->
+          if (earned) {
+            when (type) {
+              AdRewardType.EXTRA_SPIN -> openLuckyWheel()
+              AdRewardType.SECOND_CHANCE -> resumeGameAfterRevive()
+              else -> {}
+            }
+          } else {
+            // Player closed or skipped ad without earning reward
+            if (type == AdRewardType.SECOND_CHANCE) {
+              val session = _activeSession.value
+              if (session != null && !session.isFinished) {
+                if (session.remainingSeconds > 0f) {
+                  _activeSession.value = session.copy(isTimerPaused = false)
+                  startTimer()
+                } else {
+                  _showReviveDialog.value = "Süren tükendi! Reklam izleyerek +5 saniye ile devam edebilirsin."
+                }
+              }
+              val msg = "Ödülü kazanmak için reklamı sonuna kadar izlemelisiniz."
+              _syncStatusMessage.value = msg
+              android.widget.Toast.makeText(activity, msg, android.widget.Toast.LENGTH_SHORT).show()
+            }
           }
         },
         onAdNotReady = {
@@ -230,10 +255,22 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
           android.widget.Toast.makeText(activity, msg, android.widget.Toast.LENGTH_SHORT).show()
           AdManager.loadRewardedAd(activity)
           AdManager.loadInterstitialAd(activity)
+          if (type == AdRewardType.SECOND_CHANCE) {
+            val session = _activeSession.value
+            if (session != null && !session.isFinished && session.remainingSeconds > 0f) {
+              _activeSession.value = session.copy(isTimerPaused = false)
+              startTimer()
+            }
+          }
         }
       )
     } else {
       _syncStatusMessage.value = "Reklam şu an açılamadı."
+      val session = _activeSession.value
+      if (session != null && !session.isFinished && session.remainingSeconds > 0f) {
+        _activeSession.value = session.copy(isTimerPaused = false)
+        startTimer()
+      }
     }
   }
 
@@ -271,6 +308,8 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
   fun triggerReviveRewardedAd(activity: Activity?) {
     val session = _activeSession.value
     if (session != null && !session.hasUsedRevive) {
+      // Pause timer immediately to preserve remaining seconds while ad prepares/plays
+      _activeSession.value = session.copy(isTimerPaused = true)
       requestRewardedAdWithActivity(activity, AdRewardType.SECOND_CHANCE)
     }
   }
@@ -304,12 +343,17 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         _showReviveDialog.value = null
         val session = _activeSession.value
         if (session != null && !session.hasUsedRevive) {
+          val addedSeconds = 5.0f
+          val currentRemaining = max(0f, session.remainingSeconds)
+          val newRemaining = currentRemaining + addedSeconds
+          val newDuration = max(session.durationSeconds, newRemaining)
           _activeSession.value = session.copy(
             isFinished = false,
             isTimerPaused = true, // Paused while ad is on screen; starts in resumeGameAfterRevive
             hasUsedRevive = true,
-            remainingSeconds = 6.5f,
-            feedbackText = "🔥 Can Yenilendi! +6 Saniye Süre!"
+            remainingSeconds = newRemaining,
+            durationSeconds = newDuration,
+            feedbackText = "🔥 +5 Saniye Eklendi!"
           )
           _screenState.value = ScreenState.GAME_PLAY
         }
@@ -450,7 +494,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
       )
       _isSubmittingScore.value = false
       if (result.isSuccess) {
-        _syncStatusMessage.value = "Skorun Türkiye liderlik tablosuna kaydedildi! 🚀"
+        _syncStatusMessage.value = "Skorun dünya ve Türkiye liderlik tablosuna kaydedildi! 🚀"
         SoundHapticManager.playFanfare(profile.soundEnabled)
         onComplete?.invoke(true, "Başarılı")
       } else {
@@ -466,6 +510,8 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     val currentFbUser = currentUser.value
     val currentUid = currentFbUser?.uid
     val cloudEntries = cloudLeaderboard.value
+    val userAvatarEmoji = avatars.value.find { it.id == user.selectedAvatarId }?.emoji ?: "🧑‍🚀"
+    val userLiveScore = user.overallBrainScore * 10 + user.totalScore
 
     // Tab 0: TÜRKİYE
     if (tabIndex == 0) {
@@ -477,31 +523,29 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
           if (isCurrent) foundUser = true
           LeaderboardEntry(
             rank = index + 1,
-            name = entry.userName,
+            name = if (isCurrent) "${entry.userName} (Sen)" else entry.userName,
             score = entry.brainScore,
             avatarEmoji = entry.avatarEmoji,
             isUser = isCurrent,
             country = "TR",
-            city = "Türkiye",
+            city = entry.city.ifBlank { "Türkiye" },
             userId = entry.userId,
             league = League.fromScore(entry.brainScore)
           )
         }.toMutableList()
 
         if (!foundUser) {
-          val userAvatarEmoji = avatars.value.find { it.id == user.selectedAvatarId }?.emoji ?: "🧑‍🚀"
-          val userScore = user.overallBrainScore * 10 + user.totalScore
           mapped.add(
             LeaderboardEntry(
               rank = mapped.size + 1,
               name = "${user.name} (Sen)",
-              score = userScore,
+              score = userLiveScore,
               avatarEmoji = userAvatarEmoji,
               isUser = true,
               country = "TR",
               city = "Türkiye",
               userId = currentUid ?: "",
-              league = League.fromScore(userScore)
+              league = League.fromScore(userLiveScore)
             )
           )
         }
@@ -513,8 +557,76 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
       return repository.getLeaderboard(1)
     }
 
-    // Tab 1: DÜNYA (Global pool)
-    return repository.getLeaderboard(0)
+    // Tab 1: DÜNYA (Canlı Dünya Sıralaması / Live Global Leaderboard)
+    val worldBase = repository.getGlobalCompetitors().map {
+      LeaderboardEntry(
+        rank = 0,
+        name = it.name,
+        score = it.baseScore,
+        avatarEmoji = it.avatarEmoji,
+        isUser = false,
+        country = it.country,
+        city = it.city,
+        league = it.league
+      )
+    }.toMutableList()
+
+    // Overlay and merge real live Firestore cloud users into the global leaderboard
+    if (cloudEntries.isNotEmpty()) {
+      cloudEntries.forEach { cloud ->
+        val isCurrent = (currentUid != null && cloud.userId == currentUid)
+        val existingIndex = worldBase.indexOfFirst {
+          it.name.equals(cloud.userName, ignoreCase = true) || (isCurrent && it.isUser)
+        }
+        val entry = LeaderboardEntry(
+          rank = 0,
+          name = if (isCurrent) "${cloud.userName} (Sen)" else cloud.userName,
+          score = cloud.brainScore,
+          avatarEmoji = cloud.avatarEmoji,
+          isUser = isCurrent,
+          country = "TR",
+          city = cloud.city.ifBlank { "Türkiye" },
+          userId = cloud.userId,
+          league = League.fromScore(cloud.brainScore)
+        )
+        if (existingIndex >= 0) {
+          worldBase[existingIndex] = entry
+        } else {
+          worldBase.add(entry)
+        }
+      }
+    }
+
+    // Ensure the current active user is always represented with their live score & marked as isUser = true
+    val userEntryIndex = worldBase.indexOfFirst { it.isUser || (currentUid != null && it.userId == currentUid) }
+    if (userEntryIndex >= 0) {
+      val existing = worldBase[userEntryIndex]
+      val effectiveScore = max(existing.score, userLiveScore)
+      worldBase[userEntryIndex] = existing.copy(
+        score = effectiveScore,
+        avatarEmoji = userAvatarEmoji,
+        name = if (existing.name.contains("(Sen)")) existing.name else "${user.name} (Sen)",
+        isUser = true,
+        league = League.fromScore(effectiveScore)
+      )
+    } else {
+      worldBase.add(
+        LeaderboardEntry(
+          rank = 0,
+          name = "${user.name} (Sen)",
+          score = userLiveScore,
+          avatarEmoji = userAvatarEmoji,
+          isUser = true,
+          country = "TR",
+          city = "Türkiye",
+          userId = currentUid ?: "",
+          league = League.fromScore(userLiveScore)
+        )
+      )
+    }
+
+    val sortedWorld = worldBase.sortedByDescending { it.score }
+    return sortedWorld.mapIndexed { index, item -> item.copy(rank = index + 1) }
   }
 
   fun requestStartGame(gameType: GameType) {
@@ -732,8 +844,8 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
       ((totalCorrect.toFloat() / (totalCorrect + totalMistakes)) * 100).toInt()
     } else accuracy
 
-    val recordedScore = if (isVictory) session.currentScore else 30
-    val recordedXp = if (isVictory) session.xpGained else 15
+    val recordedScore = max(session.currentScore, if (isVictory) 0 else 30)
+    val recordedXp = max(session.xpGained, if (isVictory) 0 else 15)
 
     _activeSession.value = session.copy(
       remainingSeconds = 0f,

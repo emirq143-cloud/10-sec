@@ -86,6 +86,14 @@ fun getCountryFlag(countryCode: String): String {
     "ES" -> "🇪🇸"
     "KR" -> "🇰🇷"
     "CA" -> "🇨🇦"
+    "AU" -> "🇦🇺"
+    "NL" -> "🇳🇱"
+    "SE" -> "🇸🇪"
+    "CH" -> "🇨🇭"
+    "NO" -> "🇳🇴"
+    "FI" -> "🇫🇮"
+    "AZ" -> "🇦🇿"
+    "PL" -> "🇵🇱"
     else -> "🌍"
   }
 }
@@ -161,7 +169,11 @@ fun LeaderboardScreen(
                 .background(if (currentUser != null) Color(0xFF34D399) else Color(0xFFFBBF24))
             )
             Text(
-              text = if (currentUser != null) "Canlı Bulut Sıralaması" else "Yerel Sıralama",
+              text = if (currentUser != null) {
+                if (isTurkeyTab) "Canlı Türkiye Sıralaması" else "Canlı Dünya Sıralaması"
+              } else {
+                "Yerel Sıralama"
+              },
               color = if (currentUser != null) Color(0xFF34D399) else Color(0xFFFDE68A),
               fontSize = 11.sp,
               fontWeight = FontWeight.SemiBold

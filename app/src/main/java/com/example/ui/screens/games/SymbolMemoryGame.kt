@@ -94,8 +94,8 @@ fun SymbolMemoryGame(
     onDispose { onSetTimerPaused(false) }
   }
 
-  // Memorization Phase Coroutine - re-triggers on new round OR when player revives!
-  LaunchedEffect(round, hasUsedRevive) {
+  // Memorization Phase Coroutine - triggers on new round!
+  LaunchedEffect(round) {
     roundData = generateSymbolRound(if (round <= 2) 6 else 9)
     currentDisplay.clear()
     currentDisplay.addAll(roundData.initialSymbols)
