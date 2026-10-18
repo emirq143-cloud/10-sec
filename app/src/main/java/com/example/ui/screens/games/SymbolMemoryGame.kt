@@ -86,6 +86,8 @@ fun SymbolMemoryGame(
 
   var isMemorizePhase by remember { mutableStateOf(true) }
   var memorizeProgress by remember { mutableFloatStateOf(1f) }
+  var displayTrigger by remember { mutableIntStateOf(0) }
+  var prevReviveState by remember { mutableStateOf(false) }
   val currentDisplay = remember { mutableStateListOf<String>() }
   var feedbackText by remember { mutableStateOf("") }
   var feedbackIsSuccess by remember { mutableStateOf(true) }
@@ -94,9 +96,19 @@ fun SymbolMemoryGame(
     onDispose { onSetTimerPaused(false) }
   }
 
-  // Memorization Phase Coroutine - triggers on new round!
-  LaunchedEffect(round) {
-    roundData = generateSymbolRound(if (round <= 2) 6 else 9)
+  // Trigger memorization display when player watches rewarded ad (+5s)
+  LaunchedEffect(hasUsedRevive) {
+    if (hasUsedRevive && !prevReviveState) {
+      prevReviveState = true
+      displayTrigger++
+    }
+  }
+
+  // Memorization Phase Coroutine - triggers on new round OR when revive (+5s) is granted!
+  LaunchedEffect(round, displayTrigger) {
+    if (displayTrigger == 0) {
+      roundData = generateSymbolRound(if (round <= 2) 6 else 9)
+    }
     currentDisplay.clear()
     currentDisplay.addAll(roundData.initialSymbols)
     isMemorizePhase = true
@@ -108,6 +120,7 @@ fun SymbolMemoryGame(
 
     while (elapsed < totalMs) {
       delay(step)
+      onSetTimerPaused(true)
       elapsed += step
       memorizeProgress = 1f - (elapsed.toFloat() / totalMs)
     }

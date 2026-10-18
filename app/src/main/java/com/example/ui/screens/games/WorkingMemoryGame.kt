@@ -93,6 +93,8 @@ fun WorkingMemoryGame(
 
   var isDisplayPhase by rememberSaveable { mutableStateOf(true) }
   var displayProgress by rememberSaveable { mutableFloatStateOf(1f) }
+  var displayTrigger by rememberSaveable { mutableIntStateOf(0) }
+  var prevReviveState by rememberSaveable { mutableStateOf(false) }
 
   val enteredDigitsSaver = listSaver<SnapshotStateList<Int>, Int>(
     save = { it.toList() },
@@ -110,8 +112,16 @@ fun WorkingMemoryGame(
     }
   }
 
-  // Display Phase Coroutine - triggers ONLY when a new round starts!
-  LaunchedEffect(round) {
+  // Trigger initial display when player watches rewarded ad (+5s) so they see what numbers to type!
+  LaunchedEffect(hasUsedRevive) {
+    if (hasUsedRevive && !prevReviveState) {
+      prevReviveState = true
+      displayTrigger++
+    }
+  }
+
+  // Display Phase Coroutine - triggers on new round OR when revive (+5s) is granted!
+  LaunchedEffect(round, displayTrigger) {
     enteredDigits.clear()
     isDisplayPhase = true
     displayProgress = 1f
@@ -123,6 +133,7 @@ fun WorkingMemoryGame(
 
     while (elapsed < totalMs) {
       delay(step)
+      onSetTimerPaused(true)
       elapsed += step
       displayProgress = 1f - (elapsed.toFloat() / totalMs)
     }
